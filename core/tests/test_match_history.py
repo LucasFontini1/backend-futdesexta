@@ -1,4 +1,5 @@
 """Histórico: filtro de partidas terminadas sem revelar equipes privadas."""
+
 from datetime import timedelta
 
 from django.test import TestCase
@@ -16,12 +17,16 @@ class MatchHistoryTest(TestCase):
         TeamMembership.objects.create(team=self.team, user=self.owner, role='owner')
         when = timezone.now() - timedelta(days=2)
         self.finished = Match.objects.create(
-            team=self.team, title='Pelada realizada',
-            status=Match.Status.FINISHED, kind=Match.Kind.PELADA,
-            starts_at=when, ends_at=when + timedelta(hours=1),
+            team=self.team,
+            title='Pelada realizada',
+            status=Match.Status.FINISHED,
+            kind=Match.Kind.PELADA,
+            starts_at=when,
+            ends_at=when + timedelta(hours=1),
         )
         self.scheduled = Match.objects.create(
-            team=self.team, title='Pelada futura',
+            team=self.team,
+            title='Pelada futura',
             status=Match.Status.SCHEDULED,
             starts_at=timezone.now() + timedelta(days=1),
             ends_at=timezone.now() + timedelta(days=1, hours=1),
