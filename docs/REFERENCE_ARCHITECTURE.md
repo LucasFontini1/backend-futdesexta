@@ -42,3 +42,8 @@ escalações, resultados, métricas, amistosos, torneios, eventos e notificaçõ
 
 A aprovação dessas verificações não equivale a testes reais com todas as
 integrações externas ou a um certificado de prontidão em produção.
+
+## Histórico
+
+A API aceita filtros opcionais `status` e `kind` na listagem de partidas,
+sempre limitados às equipes permitidas ao usuário autenticado.
