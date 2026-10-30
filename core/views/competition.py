@@ -17,6 +17,7 @@ from core.serializers.competition import (
 )
 from core.views.team import is_admin
 from core.services.bracket import create_knockout_round
+from core.services.notifications import notify_team, notify_user
 
 
 def is_comp_admin(comp, user):
@@ -66,6 +67,7 @@ class CompetitionViewSet(viewsets.ModelViewSet):
         if not created:
             invite.status = CompetitionInvitation.Status.PENDING
             invite.save(update_fields=['status'])
+        notify_team(team, 'competition_invitation', 'Sua equipe recebeu um convite de competição.', '/competicoes', key=f'competition:{invite.pk}')
         return Response(CompetitionInvitationSerializer(invite).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['get'], url_path='equipes')
@@ -258,4 +260,5 @@ class CompetitionInvitationViewSet(viewsets.ReadOnlyModelViewSet):
                 CompetitionTeam.objects.get_or_create(
                     competition=invite.competition, team=invite.team
                 )
+        notify_user(invite.competition.owner, 'competition_response', 'Convite de competição respondido.', '/competicoes', key=f'competition-answer:{invite.pk}')
         return Response(self.get_serializer(invite).data)
