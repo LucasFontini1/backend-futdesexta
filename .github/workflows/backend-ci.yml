@@ -1,0 +1,23 @@
+name: Backend CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  quality-and-tests:
+    runs-on: ubuntu-latest
+    env:
+      DEBUG: 'true'
+      SECRET_KEY: 'temporary-key-for-ci-only-not-used-in-production'
+      DATABASE_URL: 'sqlite:///db.sqlite3'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pip install ruff
+      - run: ruff check app core
+      - run: python manage.py check
+      - run: python manage.py migrate --noinput
+      - run: python manage.py test
