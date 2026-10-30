@@ -1,5 +1,5 @@
 """Geração atômica de peladas semanais sem duplicar ocorrências."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from django.db import transaction
 from django.utils import timezone
 from core.models import Match, RecurrenceOccurrence
@@ -19,8 +19,10 @@ def generate_occurrences(rule, weeks=8):
     while day <= end_date and (rule.until is None or day <= rule.until):
         delta_weeks = (day - rule.starts_on).days // 7
         if delta_weeks >= 0 and delta_weeks % rule.interval_weeks == 0:
-            begin = timezone.make_aware(datetime.combine(day, rule.start_time), tz)
-            finish = timezone.make_aware(datetime.combine(day, rule.end_time), tz)
+            start_time = time.fromisoformat(rule.start_time) if isinstance(rule.start_time, str) else rule.start_time
+            end_time = time.fromisoformat(rule.end_time) if isinstance(rule.end_time, str) else rule.end_time
+            begin = timezone.make_aware(datetime.combine(day, start_time), tz)
+            finish = timezone.make_aware(datetime.combine(day, end_time), tz)
             with transaction.atomic():
                 if not RecurrenceOccurrence.objects.filter(rule=rule, starts_at=begin).exists():
                     match = Match.objects.create(
