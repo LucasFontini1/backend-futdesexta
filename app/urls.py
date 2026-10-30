@@ -7,6 +7,8 @@ from core.views.statistics import StatisticsView
 from core.views.recurrence import RecurrenceViewSet
 from core.views.friendly import FriendlyViewSet
 from core.views.competition import CompetitionViewSet, CompetitionInvitationViewSet
+from core.views.event import TeamEventViewSet
+from core.views.notification import NotificationViewSet
 from core.views import (
     CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView,
     MatchViewSet, TeamInvitationViewSet, TeamViewSet, UserRegistrationView, UserViewSet,
@@ -21,6 +23,8 @@ router.register(r'recorrencias', RecurrenceViewSet, basename='recorrencias')
 router.register(r'amistosos', FriendlyViewSet, basename='amistosos')
 router.register(r'competicoes', CompetitionViewSet, basename='competicoes')
 router.register(r'convites-competicao', CompetitionInvitationViewSet, basename='convites-competicao')
+router.register(r'eventos', TeamEventViewSet, basename='eventos')
+router.register(r'notificacoes', NotificationViewSet, basename='notificacoes')
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
