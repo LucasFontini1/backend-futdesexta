@@ -1,21 +1,35 @@
 """Rotas da API do Fut de Sexta."""
+
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
-from core.views.statistics import StatisticsView
-from core.views.recurrence import RecurrenceViewSet
-from core.views.friendly import FriendlyViewSet
-from core.views.competition import CompetitionViewSet, CompetitionInvitationViewSet
-from core.views.event import TeamEventViewSet
-from core.views.notification import NotificationViewSet
-from core.views.calendar import CalendarView
-from core.views.location import GeocodeView, MatchWeatherView
-from core.views.account_security import VerifyEmailView, PasswordResetRequestView, PasswordResetConfirmView, ChangePasswordView, DeleteAccountView
+
 from core.views import (
-    CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView,
-    MatchViewSet, TeamInvitationViewSet, TeamViewSet, UserRegistrationView, UserViewSet,
+    CustomTokenObtainPairView,
+    CustomTokenRefreshView,
+    CustomTokenVerifyView,
+    MatchViewSet,
+    TeamInvitationViewSet,
+    TeamViewSet,
+    UserRegistrationView,
+    UserViewSet,
 )
+from core.views.account_security import (
+    ChangePasswordView,
+    DeleteAccountView,
+    PasswordResetConfirmView,
+    PasswordResetRequestView,
+    VerifyEmailView,
+)
+from core.views.calendar import CalendarView
+from core.views.competition import CompetitionInvitationViewSet, CompetitionViewSet
+from core.views.event import TeamEventViewSet
+from core.views.friendly import FriendlyViewSet
+from core.views.location import GeocodeView, MatchWeatherView
+from core.views.notification import NotificationViewSet
+from core.views.recurrence import RecurrenceViewSet
+from core.views.statistics import StatisticsView
 
 router = DefaultRouter()
 router.register(r'usuarios', UserViewSet, basename='usuarios')

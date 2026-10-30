@@ -3,6 +3,7 @@
 PostgreSQL (Supabase) é selecionado por DATABASE_URL; Cloudinary armazena uploads
 quando CLOUDINARY_URL está configurada. Credenciais nunca são impressas.
 """
+
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -24,16 +25,15 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
 FRONTEND_URLS = [
-    url.strip() for url in os.getenv(
-        'FRONTEND_URLS', 'http://localhost:5173,http://127.0.0.1:5173'
-    ).split(',') if url.strip()
+    url.strip()
+    for url in os.getenv('FRONTEND_URLS', 'http://localhost:5173,http://127.0.0.1:5173').split(',')
+    if url.strip()
 ]
 CORS_ALLOWED_ORIGINS = FRONTEND_URLS
 CSRF_TRUSTED_ORIGINS = FRONTEND_URLS
 CORS_ALLOW_CREDENTIALS = False
 EMAIL_BACKEND = (
-    'django.core.mail.backends.console.EmailBackend'
-    if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
+    'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
 )
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
@@ -78,21 +78,26 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'app.urls'
 WSGI_APPLICATION = 'app.wsgi.application'
 ASGI_APPLICATION = 'app.asgi.application'
-TEMPLATES = [{
-    'BACKEND': 'django.template.backends.django.DjangoTemplates',
-    'DIRS': [],
-    'APP_DIRS': True,
-    'OPTIONS': {'context_processors': [
-        'django.template.context_processors.debug',
-        'django.template.context_processors.request',
-        'django.contrib.auth.context_processors.auth',
-        'django.contrib.messages.context_processors.messages',
-    ]},
-}]
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ]
+        },
+    }
+]
 DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
-        conn_max_age=600, conn_health_checks=True,
+        conn_max_age=600,
+        conn_health_checks=True,
     )
 }
 AUTH_PASSWORD_VALIDATORS = [
