@@ -7,13 +7,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import GoalEvent, LineupSlot, Match, MatchResult, Player
+from core.models import GoalEvent, LineupSlot, Match, MatchMetric, MatchResult, Player
 
 
 def summarize_player(player, results):
     played = goals = conceded = wins = draws = losses = 0
+    optional = {'yellow_cards': 0, 'red_cards': 0, 'fouls': 0, 'saves': 0}
+    recorded = {key: False for key in optional}
     for result in results:
-        slot = LineupSlot.objects.filter(match=result.match, player=player).first()
+        slot = LineupSlot.objects.filter(match=result.match, player=player, reserve=False).first()
         if not slot:
             continue
         played += 1
@@ -31,6 +33,13 @@ def summarize_player(player, results):
             draws += 1
         goals += GoalEvent.objects.filter(result=result, scorer=player, own_goal=False).count()
         conceded += GoalEvent.objects.filter(result=result, conceded_by=player).count()
+        metric = MatchMetric.objects.filter(match=result.match, player=player).first()
+        if metric:
+            for key in optional:
+                value = getattr(metric, key)
+                if value is not None:
+                    optional[key] += value
+                    recorded[key] = True
     return {
         'player': player.id,
         'name': player.name,
@@ -41,6 +50,7 @@ def summarize_player(player, results):
         'wins': wins,
         'draws': draws,
         'losses': losses,
+        **{key: optional[key] if recorded[key] else None for key in optional},
     }
 
 
@@ -67,7 +77,7 @@ class StatisticsView(APIView):
         )
         players = Player.objects.filter(team__memberships__user=request.user).distinct()
         if team_id:
-            qs = qs.filter(match__team_id=int(team_id))
+            qs = qs.filter(Q(match__team_id=int(team_id)) | Q(match__sides__team_id=int(team_id))).distinct()
             players = players.filter(team_id=int(team_id))
         if kind != 'geral':
             qs = qs.filter(match__kind=kind)

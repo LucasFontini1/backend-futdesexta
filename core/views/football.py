@@ -6,9 +6,10 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 
-from core.models import GoalEvent, LineupSlot, Match, MatchResult, ResultRevision
+from core.models import GoalEvent, LineupSlot, Match, MatchMetric, MatchResult, ResultRevision
 from core.serializers.football import (
     LineupSlotSerializer,
+    MatchMetricSerializer,
     MatchResultSerializer,
     MatchSideSerializer,
 )
@@ -139,3 +140,29 @@ class MatchFootballActions:
                 after={'home_score': current.home_score, 'away_score': current.away_score},
             )
         return Response(MatchResultSerializer(current).data)
+
+    @action(detail=True, methods=['get', 'post'], url_path='metricas')
+    def optional_metrics(self, request, pk=None):
+        """Atualiza somente estatísticas informadas, preservando valores ausentes."""
+        match = self.get_object()
+        if request.method == 'GET':
+            metrics = match.metrics.select_related('player').order_by('player_id')
+            return Response(MatchMetricSerializer(metrics, many=True).data)
+        self.assert_admin(match, request.user)
+        serializer = MatchMetricSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        player = serializer.validated_data['player']
+        slot = LineupSlot.objects.select_related('side__team').filter(match=match, player=player).first()
+        if not slot:
+            raise ValidationError({'player': 'Jogador precisa participar da escalação oficial.'})
+        if match.kind == Match.Kind.FRIENDLY and (slot.side.team is None or not is_admin(slot.side.team, request.user)):
+            raise PermissionDenied('Somente administradores da equipe registram suas métricas.')
+        fields = ('yellow_cards', 'red_cards', 'fouls', 'saves')
+        updates = {field: serializer.validated_data[field] for field in fields if field in serializer.validated_data}
+        with transaction.atomic():
+            metric, _ = MatchMetric.objects.update_or_create(
+                match=match,
+                player=player,
+                defaults=updates,
+            )
+        return Response(MatchMetricSerializer(metric).data, status=status.HTTP_200_OK)

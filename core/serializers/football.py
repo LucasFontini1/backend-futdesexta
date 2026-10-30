@@ -2,7 +2,7 @@
 
 from rest_framework import serializers
 
-from core.models import GoalEvent, LineupSlot, MatchResult, MatchSide
+from core.models import GoalEvent, LineupSlot, MatchMetric, MatchResult, MatchSide
 
 
 class MatchSideSerializer(serializers.ModelSerializer):
@@ -74,3 +74,17 @@ class MatchResultSerializer(serializers.ModelSerializer):
         if home_count > data['home_score'] or away_count > data['away_score']:
             raise serializers.ValidationError('Gols individuais não podem exceder o placar.')
         return data
+
+
+class MatchMetricSerializer(serializers.ModelSerializer):
+    """Métricas individuais ausentes permanecem NULL (desconhecidas)."""
+
+    class Meta:
+        model = MatchMetric
+        fields = ['player', 'yellow_cards', 'red_cards', 'fouls', 'saves', 'updated_at']
+        read_only_fields = ['updated_at']
+
+    def validate(self, attrs):
+        if not any(metric in attrs for metric in ('yellow_cards', 'red_cards', 'fouls', 'saves')):
+            raise serializers.ValidationError('Informe ao menos uma estatística opcional.')
+        return attrs
