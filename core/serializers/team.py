@@ -5,6 +5,7 @@ import re
 from rest_framework import serializers
 
 from core.models import Player, Team, TeamInvitation, TeamMembership
+from core.validators import validate_user_image
 
 
 class TeamDiscoverySerializer(serializers.ModelSerializer):
@@ -37,9 +38,7 @@ class TeamSerializer(serializers.ModelSerializer):
         return value
 
     def validate_emblem(self, value):
-        if value and value.size > 3 * 1024 * 1024:
-            raise serializers.ValidationError('Imagem limitada a 3 MB.')
-        return value
+        return validate_user_image(value)
 
 
 class TeamMembershipSerializer(serializers.ModelSerializer):
@@ -59,9 +58,7 @@ class PlayerSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'linked_user']
 
     def validate_photo(self, value):
-        if value and value.size > 3 * 1024 * 1024:
-            raise serializers.ValidationError('Imagem limitada a 3 MB.')
-        return value
+        return validate_user_image(value)
 
     def validate(self, attrs):
         team = self.context.get('team')
