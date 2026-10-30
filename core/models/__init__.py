@@ -5,3 +5,4 @@ from .football import GoalEvent, LineupSlot, MatchResult, MatchSide, ResultRevis
 from .recurrence import RecurrenceOccurrence, RecurrenceRule
 from .friendly import FriendlyInvitation
 from .competition import Competition, CompetitionAdmin, CompetitionFixture, CompetitionInvitation, CompetitionTeam
+from .competition_bye import CompetitionBye
