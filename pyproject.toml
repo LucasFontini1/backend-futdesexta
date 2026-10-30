@@ -1,7 +1,7 @@
 [project]
-name = "livraria"
-version = "1.0.0"
-description = "Uma API REST de uma livraria feita com Django e Django REST Framework."
+name = "fut-de-sexta-backend"
+version = "0.2.0"
+description = "API REST de equipes privadas, partidas, amistosos e competições do Fut de Sexta."
 authors = [{ name = "Marco André Mendes", email = "marcoandre@gmail.com" }]
 dependencies = [
   'dj-database-url>=2.1.0',
@@ -42,11 +42,11 @@ dev = "python manage.py runserver 127.0.0.1:8000"
 createsuperuser = "python manage.py createsuperuser"
 pre_migrate = "python manage.py makemigrations"
 migrate = "python manage.py migrate"
-post_migrate = "python manage.py graph_models -S -g -o core.png core"
+post_migrate = "python manage.py check"
 shell = "python manage.py shell"
 shellp = "python manage.py shell_plus"
 test = "python manage.py test"
-loaddata = "python manage.py loaddata core.json"
+loaddata = "python manage.py loaddata {args}"
 dumpdata = "python manage.py dumpdata --indent 2"
 cria_api = "python ./scripts/cria_api.py {args}"
 check = "ruff check"
