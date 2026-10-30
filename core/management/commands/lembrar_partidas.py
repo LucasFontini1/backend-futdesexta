@@ -1,7 +1,10 @@
 """Notificações internas de lembrete geradas uma única vez por usuário."""
+
 from datetime import timedelta
+
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+
 from core.models import Match, TeamMembership
 from core.services.notifications import notify_user
 
