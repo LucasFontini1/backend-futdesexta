@@ -11,6 +11,7 @@ from core.models import Match, MatchAttendance, Team
 from core.views.football import MatchFootballActions
 from core.serializers import AttendanceSerializer, MatchSerializer
 from core.views.team import is_admin
+from core.services.notifications import notify_team
 
 
 class MatchViewSet(MatchFootballActions, viewsets.ModelViewSet):
@@ -27,7 +28,8 @@ class MatchViewSet(MatchFootballActions, viewsets.ModelViewSet):
         team = get_object_or_404(Team, pk=self.request.data.get('team'))
         if not is_admin(team, self.request.user):
             raise PermissionDenied('Somente administradores criam peladas.')
-        serializer.save(team=team, kind=Match.Kind.PELADA)
+        match = serializer.save(team=team, kind=Match.Kind.PELADA)
+        notify_team(team, 'match', 'Nova pelada agendada.', '/partidas', key=f'match:{match.pk}')
 
     def perform_update(self, serializer):
         if not is_admin(serializer.instance.team, self.request.user):
