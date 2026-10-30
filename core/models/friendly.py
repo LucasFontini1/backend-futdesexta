@@ -1,4 +1,5 @@
 """Convites administrativos para amistosos entre equipes cadastradas."""
+
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -28,7 +29,5 @@ class FriendlyInvitation(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(
-                condition=~Q(from_team=models.F('to_team')), name='friendlies_distinct_teams'
-            ),
+            models.CheckConstraint(condition=~Q(from_team=models.F('to_team')), name='friendlies_distinct_teams'),
         ]

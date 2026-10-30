@@ -1,12 +1,11 @@
 """Central de notificações e inscrições push isoladas por usuário."""
+
 from django.conf import settings
 from django.db import models
 
 
 class Notification(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications'
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
     kind = models.CharField(max_length=60)
     title = models.CharField(max_length=255)
     link = models.CharField(max_length=255, blank=True)
@@ -27,9 +26,7 @@ class Notification(models.Model):
 
 
 class PushSubscription(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='push_subscriptions'
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='push_subscriptions')
     endpoint = models.URLField(max_length=1500, unique=True)
     p256dh = models.CharField(max_length=255)
     auth = models.CharField(max_length=255)

@@ -1,4 +1,5 @@
 """Escalação manual, resultados e eventos oficiais da partida."""
+
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -6,9 +7,7 @@ from django.db import models
 
 class MatchSide(models.Model):
     match = models.ForeignKey('core.Match', on_delete=models.CASCADE, related_name='sides')
-    team = models.ForeignKey(
-        'core.Team', on_delete=models.PROTECT, related_name='match_sides', null=True, blank=True
-    )
+    team = models.ForeignKey('core.Team', on_delete=models.PROTECT, related_name='match_sides', null=True, blank=True)
     name = models.CharField(max_length=100)
     color = models.CharField(max_length=7, default='#22c55e')
     order = models.PositiveSmallIntegerField()

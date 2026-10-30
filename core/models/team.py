@@ -1,5 +1,7 @@
 """Equipes privadas e convites: o acesso é controlado no servidor."""
+
 from datetime import timedelta
+
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
@@ -15,9 +17,7 @@ class Team(models.Model):
     description = models.TextField(blank=True)
     color = models.CharField(max_length=7, default='#22c55e')
     emblem = models.ImageField(upload_to='teams/', blank=True, null=True)
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='owned_teams'
-    )
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='owned_teams')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -31,9 +31,7 @@ class TeamMembership(models.Model):
         MEMBER = 'member', 'Membro'
 
     team = models.ForeignKey(Team, related_name='memberships', on_delete=models.CASCADE)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='team_memberships', on_delete=models.CASCADE
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='team_memberships', on_delete=models.CASCADE)
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.MEMBER)
     joined_at = models.DateTimeField(auto_now_add=True)
 
@@ -52,9 +50,7 @@ class TeamInvitation(models.Model):
         EXPIRED = 'expired', 'Expirado'
 
     team = models.ForeignKey(Team, related_name='invitations', on_delete=models.CASCADE)
-    invitee = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name='team_invitations', on_delete=models.CASCADE
-    )
+    invitee = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='team_invitations', on_delete=models.CASCADE)
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, related_name='sent_team_invitations', on_delete=models.CASCADE
     )

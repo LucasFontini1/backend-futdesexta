@@ -1,8 +1,10 @@
 """Partidas e confirmação de presença. Uma modalidade por partida."""
-from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+
 from core.models.team import Team
 
 
@@ -25,8 +27,20 @@ class Match(models.Model):
     starts_at = models.DateTimeField()
     ends_at = models.DateTimeField()
     location = models.CharField(max_length=255, blank=True)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, validators=[MinValueValidator(-90), MaxValueValidator(90)])
-    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, validators=[MinValueValidator(-180), MaxValueValidator(180)])
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(-90), MaxValueValidator(90)],
+    )
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(-180), MaxValueValidator(180)],
+    )
     expected_players = models.PositiveSmallIntegerField(default=10)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -45,9 +59,7 @@ class MatchAttendance(models.Model):
         NOT_GOING = 'not_going', 'Não vou'
 
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='attendances')
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='match_attendances'
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='match_attendances')
     response = models.CharField(max_length=10, choices=Response.choices)
     updated_at = models.DateTimeField(auto_now=True)
 

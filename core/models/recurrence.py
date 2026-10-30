@@ -1,4 +1,5 @@
 """Regras de peladas semanais, com geração idempotente de ocorrências."""
+
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models

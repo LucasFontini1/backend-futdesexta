@@ -1,4 +1,5 @@
 """Controle de folgas em chaves mata-mata com número ímpar de equipes."""
+
 from django.db import models
 
 

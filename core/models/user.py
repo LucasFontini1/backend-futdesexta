@@ -1,4 +1,5 @@
 """Usuários: mantém o modelo e histórico de migrações do projeto original."""
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -27,6 +28,7 @@ def profile_photo_path(instance, filename):
     # Nome gerado no servidor, para não confiar no nome enviado pelo usuário.
     import uuid
     from pathlib import Path
+
     return f'profiles/{instance.pk}/{uuid.uuid4().hex}{Path(filename).suffix.lower()}'
 
 

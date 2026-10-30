@@ -1,4 +1,5 @@
 """Competições entre equipes registradas no Fut de Sexta."""
+
 from django.conf import settings
 from django.db import models
 
