@@ -1,4 +1,5 @@
 """Regressões para métricas opcionais, autorização e total por modalidade."""
+
 from datetime import timedelta
 
 from django.test import TestCase
@@ -31,7 +32,8 @@ class OptionalMetricsTest(TestCase):
             {'side': away.pk, 'player': self.reserve.pk, 'reserve': True},
         ]
         self.assertEqual(
-            self.client.put(f'/api/partidas/{self.match.pk}/escalacao/', {'slots': lineup}, format='json').status_code, 200
+            self.client.put(f'/api/partidas/{self.match.pk}/escalacao/', {'slots': lineup}, format='json').status_code,
+            200,
         )
         self.assertEqual(
             self.client.post(
