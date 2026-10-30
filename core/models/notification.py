@@ -13,6 +13,7 @@ class Notification(models.Model):
     dedupe_key = models.CharField(max_length=150, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     read_at = models.DateTimeField(null=True, blank=True)
+    push_sent_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
