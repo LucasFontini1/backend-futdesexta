@@ -1,5 +1,6 @@
 """Criação de peladas e confirmação de presença protegidas por equipe."""
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -18,7 +19,8 @@ class MatchViewSet(MatchFootballActions, viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Match.objects.filter(
-            team__memberships__user=self.request.user
+            Q(team__memberships__user=self.request.user) |
+            Q(sides__team__memberships__user=self.request.user)
         ).select_related('team').distinct().order_by('starts_at')
 
     def perform_create(self, serializer):
