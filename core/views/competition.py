@@ -29,6 +29,7 @@ from core.serializers.competition import (
 )
 from core.services.bracket import create_knockout_round
 from core.services.notifications import notify_team, notify_user
+from core.services.schedule import assert_teams_available
 from core.views.team import is_admin
 
 
@@ -117,6 +118,7 @@ class CompetitionViewSet(viewsets.ModelViewSet):
         if start >= end:
             raise ValidationError('O fim precisa ser após o início.')
         with transaction.atomic():
+            assert_teams_available([home.pk, away.pk], start, end)
             match = Match.objects.create(
                 team=home,
                 kind=Match.Kind.COMPETITION,
