@@ -46,7 +46,10 @@ class StatisticsView(APIView):
         if team_id and not team_id.isdigit():
             return Response({'detail': 'Equipe inválida.'}, status=400)
         qs = MatchResult.objects.filter(
-            match__team__memberships__user=request.user
+            match__status=Match.Status.FINISHED,
+        ).filter(
+            Q(match__team__memberships__user=request.user) |
+            Q(match__sides__team__memberships__user=request.user)
         ).select_related('match').distinct()
         players = Player.objects.filter(team__memberships__user=request.user).distinct()
         if team_id:
