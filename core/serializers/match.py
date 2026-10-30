@@ -8,7 +8,7 @@ class MatchSerializer(serializers.ModelSerializer):
         model = Match
         fields = [
             'id', 'team', 'title', 'kind', 'status', 'starts_at',
-            'ends_at', 'location', 'expected_players', 'created_at',
+            'ends_at', 'location', 'latitude', 'longitude', 'expected_players', 'created_at',
         ]
         read_only_fields = ['id', 'kind', 'status', 'created_at']
 
