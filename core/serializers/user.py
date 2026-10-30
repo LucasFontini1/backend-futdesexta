@@ -10,6 +10,7 @@ from django.utils.http import urlsafe_base64_encode
 from rest_framework import serializers
 
 from core.models import User
+from core.validators import validate_user_image
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -28,9 +29,7 @@ class UserPrivateSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'email']
 
     def validate_photo(self, value):
-        if value is not None and value.size > 3 * 1024 * 1024:
-            raise serializers.ValidationError('Imagem limitada a 3 MB.')
-        return value
+        return validate_user_image(value)
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
