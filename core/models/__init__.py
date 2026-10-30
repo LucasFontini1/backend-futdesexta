@@ -8,3 +8,4 @@ from .competition import Competition, CompetitionAdmin, CompetitionFixture, Comp
 from .competition_bye import CompetitionBye
 from .event import TeamEvent, EventAttendance
 from .notification import Notification, PushSubscription
+from .player_link import PlayerLinkRequest
