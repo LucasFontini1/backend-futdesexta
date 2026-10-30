@@ -10,6 +10,7 @@ from core.views.competition import CompetitionViewSet, CompetitionInvitationView
 from core.views.event import TeamEventViewSet
 from core.views.notification import NotificationViewSet
 from core.views.calendar import CalendarView
+from core.views.account_security import VerifyEmailView, PasswordResetRequestView, PasswordResetConfirmView, ChangePasswordView
 from core.views import (
     CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView,
     MatchViewSet, TeamInvitationViewSet, TeamViewSet, UserRegistrationView, UserViewSet,
@@ -37,5 +38,9 @@ urlpatterns = [
     path('api/calendario/', CalendarView.as_view(), name='calendar'),
     path('api/estatisticas/', StatisticsView.as_view(), name='statistics'),
     path('api/registro/', UserRegistrationView.as_view(), name='user_registration'),
+    path('api/conta/verificar-email/', VerifyEmailView.as_view(), name='verify-email'),
+    path('api/conta/recuperar-senha/', PasswordResetRequestView.as_view(), name='recover-password'),
+    path('api/conta/redefinir-senha/', PasswordResetConfirmView.as_view(), name='reset-password'),
+    path('api/conta/alterar-senha/', ChangePasswordView.as_view(), name='change-password'),
     path('api/', include(router.urls)),
 ]
