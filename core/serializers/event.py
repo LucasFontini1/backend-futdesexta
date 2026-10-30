@@ -3,6 +3,7 @@
 from rest_framework import serializers
 
 from core.models import EventAttendance, TeamEvent
+from core.validators import validate_user_image
 
 
 class TeamEventSerializer(serializers.ModelSerializer):
