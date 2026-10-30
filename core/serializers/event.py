@@ -8,7 +8,7 @@ class TeamEventSerializer(serializers.ModelSerializer):
         model = TeamEvent
         fields = [
             'id', 'team', 'title', 'description', 'category', 'image',
-            'starts_at', 'ends_at', 'location', 'organizer', 'created_at',
+            'starts_at', 'ends_at', 'location', 'latitude', 'longitude', 'organizer', 'created_at',
         ]
         read_only_fields = ['id', 'organizer', 'created_at']
 
