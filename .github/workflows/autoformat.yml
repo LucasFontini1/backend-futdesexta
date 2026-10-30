@@ -1,7 +1,7 @@
 name: Backend autoformat
 on:
   push:
-    branches: ['feature/foundation-security-20261030']
+    branches: ['feature/foundation-security-20261030', 'feature/scheduling-integrity-20261030']
 permissions:
   contents: write
 concurrency:
@@ -24,7 +24,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           for folder in app core/models core/serializers core/views core/services core/tests core/management scripts; do
-            ruff check --select I --fix "$folder"
+            ruff check --select I,F --fix "$folder"
             ruff format "$folder"
             git add "$folder"
             if ! git diff --cached --quiet; then

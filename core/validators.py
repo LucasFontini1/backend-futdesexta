@@ -1,4 +1,5 @@
 """Validação de imagens recebidas antes de enviar ao Cloudinary ou disco."""
+
 from PIL import Image, UnidentifiedImageError
 from rest_framework.exceptions import ValidationError
 

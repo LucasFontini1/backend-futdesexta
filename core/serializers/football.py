@@ -1,9 +1,8 @@
 """Validadores de escalações e resultados. Estatísticas vêm das fontes oficiais."""
 
-from django.db import transaction
 from rest_framework import serializers
 
-from core.models import GoalEvent, LineupSlot, MatchResult, MatchSide, Player
+from core.models import GoalEvent, LineupSlot, MatchResult, MatchSide
 
 
 class MatchSideSerializer(serializers.ModelSerializer):

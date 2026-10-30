@@ -4,6 +4,7 @@ from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
 from core.models import CompetitionBye, CompetitionFixture, Match, MatchSide
+from core.services.schedule import assert_teams_available
 
 
 def create_knockout_round(competition, teams, round_number, starts_at, ends_at):
@@ -15,6 +16,7 @@ def create_knockout_round(competition, teams, round_number, starts_at, ends_at):
         raise ValidationError('Essa rodada já foi criada.')
     count = 0
     with transaction.atomic():
+        assert_teams_available([team.pk for team in teams], starts_at, ends_at)
         for index in range(0, len(teams) - 1, 2):
             home, away = teams[index : index + 2]
             match = Match.objects.create(

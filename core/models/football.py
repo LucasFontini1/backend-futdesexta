@@ -1,7 +1,7 @@
 """Escalação manual, resultados e eventos oficiais da partida."""
 
 from django.conf import settings
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator
 from django.db import models
 
 

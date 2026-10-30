@@ -11,7 +11,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from core.models import Player, Team, TeamInvitation, TeamMembership, User
+from core.models import Team, TeamInvitation, TeamMembership, User
 from core.serializers import (
     PlayerSerializer,
     TeamDiscoverySerializer,
@@ -118,7 +118,7 @@ class TeamViewSet(TeamManagementActions, viewsets.ModelViewSet):
             invitee,
             'team_invitation',
             'Você recebeu um convite de equipe.',
-            f'/convites',
+            '/convites',
             key=f'team-invite:{invite.pk}',
         )
         return Response(TeamInvitationSerializer(invite).data, status=status.HTTP_201_CREATED)
