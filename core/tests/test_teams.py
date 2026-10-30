@@ -1,5 +1,7 @@
 """Testes de autorização e fluxo de equipes privadas."""
+from datetime import timedelta
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework.test import APIClient
 from core.models import Team, TeamInvitation, TeamMembership, User
 
@@ -85,6 +87,20 @@ class PrivateTeamsTest(TestCase):
         payload = str(response.data)
         self.assertNotIn('owner@example.com', payload)
         self.assertNotIn('is_superuser', payload)
+
+    def test_expired_invite_never_joins_and_is_persisted(self):
+        team = Team.objects.create(name='Sexta', owner=self.owner)
+        TeamMembership.objects.create(team=team, user=self.owner, role='owner')
+        invite = TeamInvitation.objects.create(
+            team=team, invited_by=self.owner, invitee=self.outsider,
+            expires_at=timezone.now() - timedelta(days=1),
+        )
+        self.client.force_authenticate(self.outsider)
+        response = self.client.post(f'/api/convites-equipe/{invite.pk}/aceitar/')
+        self.assertEqual(response.status_code, 400)
+        invite.refresh_from_db()
+        self.assertEqual(invite.status, 'expired')
+        self.assertFalse(TeamMembership.objects.filter(team=team, user=self.outsider).exists())
 
     def test_unauthenticated_requests_are_denied(self):
         self.client.force_authenticate(user=None)
