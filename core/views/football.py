@@ -155,14 +155,14 @@ class MatchFootballActions:
         slot = LineupSlot.objects.select_related('side__team').filter(match=match, player=player).first()
         if not slot:
             raise ValidationError({'player': 'Jogador precisa participar da escalação oficial.'})
-        if match.kind == Match.Kind.FRIENDLY and (
-            slot.side.team is None or not is_admin(slot.side.team, request.user)
-        ):
+        if match.kind == Match.Kind.FRIENDLY and (slot.side.team is None or not is_admin(slot.side.team, request.user)):
             raise PermissionDenied('Somente administradores da equipe registram suas métricas.')
         fields = ('yellow_cards', 'red_cards', 'fouls', 'saves')
         updates = {field: serializer.validated_data[field] for field in fields if field in serializer.validated_data}
         with transaction.atomic():
             metric, _ = MatchMetric.objects.update_or_create(
-                match=match, player=player, defaults=updates,
+                match=match,
+                player=player,
+                defaults=updates,
             )
         return Response(MatchMetricSerializer(metric).data, status=status.HTTP_200_OK)
