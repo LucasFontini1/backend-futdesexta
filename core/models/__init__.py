@@ -6,3 +6,5 @@ from .recurrence import RecurrenceOccurrence, RecurrenceRule
 from .friendly import FriendlyInvitation
 from .competition import Competition, CompetitionAdmin, CompetitionFixture, CompetitionInvitation, CompetitionTeam
 from .competition_bye import CompetitionBye
+from .event import TeamEvent, EventAttendance
+from .notification import Notification, PushSubscription
