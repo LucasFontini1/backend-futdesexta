@@ -59,10 +59,18 @@ class MatchFootballActions:
         serializer.is_valid(raise_exception=True)
         existing = set()
         entries = []
+        writable_sides = set(match.sides.values_list('id', flat=True))
+        if match.kind == Match.Kind.FRIENDLY:
+            writable_sides = set(match.sides.filter(
+                team__memberships__user=request.user,
+                team__memberships__role__in=['owner', 'admin'],
+            ).values_list('id', flat=True))
+        if match.kind == Match.Kind.COMPETITION:
+            writable_sides = set(match.sides.values_list('id', flat=True))
         for item in serializer.validated_data:
             side, player = item['side'], item['player']
-            if side.match_id != match.pk:
-                raise ValidationError('Lado não pertence à partida.')
+            if side.match_id != match.pk or side.pk not in writable_sides:
+                raise ValidationError('Lado não autorizado para edição.')
             allowed_team = side.team_id or match.team_id
             if player.team_id != allowed_team:
                 raise ValidationError('Jogador não pertence à equipe deste lado.')
@@ -71,7 +79,7 @@ class MatchFootballActions:
             existing.add(player.pk)
             entries.append(LineupSlot(match=match, **item))
         with transaction.atomic():
-            match.lineup_slots.all().delete()
+            match.lineup_slots.filter(side_id__in=writable_sides).delete()
             LineupSlot.objects.bulk_create(entries)
         return Response(LineupSlotSerializer(match.lineup_slots.all(), many=True).data)
 
@@ -87,7 +95,7 @@ class MatchFootballActions:
         serializer = MatchResultSerializer(data=request.data, context={'match': match})
         serializer.is_valid(raise_exception=True)
         values = dict(serializer.validated_data)
-        goals = values.pop('goals', None)
+        goals = values.pop('goals', [])
         with transaction.atomic():
             current = MatchResult.objects.select_for_update().filter(match=match).first()
             before = {}
@@ -103,9 +111,8 @@ class MatchFootballActions:
                 current.save()
             else:
                 current = MatchResult.objects.create(match=match, entered_by=request.user, **values)
-            if goals is not None:
-                current.goals.all().delete()
-                GoalEvent.objects.bulk_create([GoalEvent(result=current, **goal) for goal in goals])
+            current.goals.all().delete()
+            GoalEvent.objects.bulk_create([GoalEvent(result=current, **goal) for goal in goals])
             if match.kind == Match.Kind.FRIENDLY:
                 from core.models import FriendlyInvitation
                 FriendlyInvitation.objects.filter(match=match).update(
