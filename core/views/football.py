@@ -18,6 +18,9 @@ class MatchFootballActions:
             authorized = authorized or match.sides.filter(
                 team__memberships__user=user, team__memberships__role__in=['owner', 'admin']
             ).exists()
+        if match.kind == Match.Kind.COMPETITION:
+            from core.views.competition import is_comp_admin
+            authorized = is_comp_admin(match.competition_fixture.competition, user)
         if not authorized:
             raise PermissionDenied('Somente administradores registram resultados e escalações.')
 
