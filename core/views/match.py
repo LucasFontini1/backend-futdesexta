@@ -21,7 +21,7 @@ class MatchViewSet(MatchFootballActions, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return (
+        qs = (
             Match.objects
             .filter(
                 Q(team__memberships__user=self.request.user)
@@ -33,6 +33,18 @@ class MatchViewSet(MatchFootballActions, viewsets.ModelViewSet):
             .distinct()
             .order_by('starts_at')
         )
+        if self.action == 'list':
+            match_status = self.request.query_params.get('status')
+            kind = self.request.query_params.get('kind')
+            if match_status:
+                if match_status not in Match.Status.values:
+                    raise ValidationError({'status': 'Status inválido.'})
+                qs = qs.filter(status=match_status)
+            if kind:
+                if kind not in Match.Kind.values:
+                    raise ValidationError({'kind': 'Modalidade inválida.'})
+                qs = qs.filter(kind=kind)
+        return qs
 
     def perform_create(self, serializer):
         team = get_object_or_404(Team, pk=self.request.data.get('team'))
