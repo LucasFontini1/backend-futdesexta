@@ -1,6 +1,9 @@
 """Serialização com níveis separados para descoberta e membros."""
+
 import re
+
 from rest_framework import serializers
+
 from core.models import Player, Team, TeamInvitation, TeamMembership
 
 
@@ -17,8 +20,14 @@ class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
         fields = [
-            'id', 'name', 'description', 'color', 'emblem', 'owner',
-            'created_at', 'member_count',
+            'id',
+            'name',
+            'description',
+            'color',
+            'emblem',
+            'owner',
+            'created_at',
+            'member_count',
         ]
         read_only_fields = ['id', 'owner', 'created_at', 'member_count']
 
@@ -68,10 +77,17 @@ class PlayerSerializer(serializers.ModelSerializer):
 
 class TeamInvitationSerializer(serializers.ModelSerializer):
     team_name = serializers.CharField(source='team.name', read_only=True)
+
     class Meta:
         model = TeamInvitation
         fields = [
-            'id', 'team', 'team_name', 'invitee', 'invited_by',
-            'status', 'created_at', 'expires_at',
+            'id',
+            'team',
+            'team_name',
+            'invitee',
+            'invited_by',
+            'status',
+            'created_at',
+            'expires_at',
         ]
         read_only_fields = fields

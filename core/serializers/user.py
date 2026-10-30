@@ -1,17 +1,20 @@
 """Serializadores distintos para descoberta pública e perfil privado."""
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
+
 from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.mail import send_mail
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import serializers
+
 from core.models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Somente dados públicos. Nunca expor e-mail/permissões na pesquisa."""
+
     class Meta:
         model = User
         fields = ['id', 'name', 'username', 'photo']
@@ -34,12 +37,15 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, trim_whitespace=False)
     password_confirm = serializers.CharField(write_only=True, trim_whitespace=False)
     accepted_terms = serializers.BooleanField(write_only=True)
+
     class Meta:
         model = User
         fields = ['id', 'email', 'name', 'username', 'password', 'password_confirm', 'accepted_terms']
         read_only_fields = ['id']
-        extra_kwargs = {'name': {'required': True, 'allow_blank': False},
-                        'username': {'required': True, 'allow_blank': False}}
+        extra_kwargs = {
+            'name': {'required': True, 'allow_blank': False},
+            'username': {'required': True, 'allow_blank': False},
+        }
 
     def validate_username(self, value):
         value = value.strip()

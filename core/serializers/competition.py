@@ -1,5 +1,7 @@
 """Serializadores de competições e convites."""
+
 from rest_framework import serializers
+
 from core.models import Competition, CompetitionFixture, CompetitionInvitation
 
 
@@ -7,8 +9,17 @@ class CompetitionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Competition
         fields = [
-            'id', 'name', 'description', 'image', 'rules', 'format',
-            'starts_on', 'ends_on', 'owner', 'is_active', 'created_at',
+            'id',
+            'name',
+            'description',
+            'image',
+            'rules',
+            'format',
+            'starts_on',
+            'ends_on',
+            'owner',
+            'is_active',
+            'created_at',
         ]
         read_only_fields = ['id', 'owner', 'created_at']
 
@@ -22,6 +33,7 @@ class CompetitionSerializer(serializers.ModelSerializer):
 
 class CompetitionInvitationSerializer(serializers.ModelSerializer):
     team_name = serializers.CharField(source='team.name', read_only=True)
+
     class Meta:
         model = CompetitionInvitation
         fields = ['id', 'competition', 'team', 'team_name', 'status', 'sent_at']

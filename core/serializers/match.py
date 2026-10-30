@@ -1,5 +1,7 @@
 """Representação de partidas e respostas de presença."""
+
 from rest_framework import serializers
+
 from core.models import Match, MatchAttendance
 
 
@@ -7,8 +9,18 @@ class MatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Match
         fields = [
-            'id', 'team', 'title', 'kind', 'status', 'starts_at',
-            'ends_at', 'location', 'latitude', 'longitude', 'expected_players', 'created_at',
+            'id',
+            'team',
+            'title',
+            'kind',
+            'status',
+            'starts_at',
+            'ends_at',
+            'location',
+            'latitude',
+            'longitude',
+            'expected_players',
+            'created_at',
         ]
         read_only_fields = ['id', 'kind', 'status', 'created_at']
 

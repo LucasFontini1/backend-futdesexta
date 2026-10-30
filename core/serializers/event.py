@@ -1,14 +1,27 @@
 """Eventos e presenças controlados pela equipe."""
+
 from rest_framework import serializers
-from core.models import TeamEvent, EventAttendance
+
+from core.models import EventAttendance, TeamEvent
 
 
 class TeamEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeamEvent
         fields = [
-            'id', 'team', 'title', 'description', 'category', 'image',
-            'starts_at', 'ends_at', 'location', 'latitude', 'longitude', 'organizer', 'created_at',
+            'id',
+            'team',
+            'title',
+            'description',
+            'category',
+            'image',
+            'starts_at',
+            'ends_at',
+            'location',
+            'latitude',
+            'longitude',
+            'organizer',
+            'created_at',
         ]
         read_only_fields = ['id', 'organizer', 'created_at']
 

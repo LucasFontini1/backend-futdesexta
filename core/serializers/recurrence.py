@@ -1,5 +1,7 @@
 """Validação de recorrências; não apagar partidas já realizadas."""
+
 from rest_framework import serializers
+
 from core.models import RecurrenceRule
 
 
@@ -7,9 +9,19 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecurrenceRule
         fields = [
-            'id', 'team', 'title', 'weekday', 'start_time', 'end_time',
-            'starts_on', 'until', 'location', 'expected_players',
-            'interval_weeks', 'active', 'created_at',
+            'id',
+            'team',
+            'title',
+            'weekday',
+            'start_time',
+            'end_time',
+            'starts_on',
+            'until',
+            'location',
+            'expected_players',
+            'interval_weeks',
+            'active',
+            'created_at',
         ]
         read_only_fields = ['id', 'created_at']
 

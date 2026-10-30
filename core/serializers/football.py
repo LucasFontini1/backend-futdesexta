@@ -1,6 +1,8 @@
 """Validadores de escalações e resultados. Estatísticas vêm das fontes oficiais."""
+
 from django.db import transaction
 from rest_framework import serializers
+
 from core.models import GoalEvent, LineupSlot, MatchResult, MatchSide, Player
 
 
@@ -58,11 +60,16 @@ class MatchResultSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError('Autor de gol não escalado.')
                 same_side = scorer_slot.side_id == scoring_side.pk
                 if same_side == bool(goal.get('own_goal', False)):
-                    raise serializers.ValidationError('Gol normal deve ser do autor pelo lado que marcou; gol contra deve beneficiar o adversário.')
+                    raise serializers.ValidationError(
+                        'Gol normal deve ser do autor pelo lado que marcou; gol contra deve beneficiar o adversário.'
+                    )
             if keeper:
-                eligible = LineupSlot.objects.filter(
-                    match=match, player=keeper, goalkeeper=True
-                ).exclude(side=scoring_side).exists()
+                eligible = (
+                    LineupSlot.objects
+                    .filter(match=match, player=keeper, goalkeeper=True)
+                    .exclude(side=scoring_side)
+                    .exists()
+                )
                 if not eligible:
                     raise serializers.ValidationError('Goleiro deve estar no lado adversário.')
         if home_count > data['home_score'] or away_count > data['away_score']:

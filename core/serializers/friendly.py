@@ -1,5 +1,7 @@
 """Amistosos privados; nomes básicos de equipe visíveis somente às envolvidas."""
+
 from rest_framework import serializers
+
 from core.models import FriendlyInvitation
 
 
@@ -10,13 +12,30 @@ class FriendlyInvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = FriendlyInvitation
         fields = [
-            'id', 'from_team', 'from_name', 'to_team', 'to_name',
-            'starts_at', 'ends_at', 'location', 'message', 'status',
-            'match', 'result_approved_from', 'result_approved_to', 'created_at',
+            'id',
+            'from_team',
+            'from_name',
+            'to_team',
+            'to_name',
+            'starts_at',
+            'ends_at',
+            'location',
+            'message',
+            'status',
+            'match',
+            'result_approved_from',
+            'result_approved_to',
+            'created_at',
         ]
         read_only_fields = [
-            'id', 'from_name', 'to_name', 'status', 'match',
-            'result_approved_from', 'result_approved_to', 'created_at',
+            'id',
+            'from_name',
+            'to_name',
+            'status',
+            'match',
+            'result_approved_from',
+            'result_approved_to',
+            'created_at',
         ]
 
     def validate(self, data):
