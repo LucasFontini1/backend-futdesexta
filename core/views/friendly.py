@@ -2,8 +2,7 @@
 
 from django.db import transaction
 from django.db.models import Q
-from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -57,7 +56,8 @@ class FriendlyViewSet(viewsets.ModelViewSet):
             if decision:
                 assert_teams_available(
                     [invitation.from_team_id, invitation.to_team_id],
-                    invitation.starts_at, invitation.ends_at,
+                    invitation.starts_at,
+                    invitation.ends_at,
                 )
                 # Uma partida oficial, compartilhada entre equipes.
                 match = Match.objects.create(
