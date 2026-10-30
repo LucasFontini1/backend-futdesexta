@@ -9,6 +9,7 @@ from core.views.friendly import FriendlyViewSet
 from core.views.competition import CompetitionViewSet, CompetitionInvitationViewSet
 from core.views.event import TeamEventViewSet
 from core.views.notification import NotificationViewSet
+from core.views.calendar import CalendarView
 from core.views import (
     CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView,
     MatchViewSet, TeamInvitationViewSet, TeamViewSet, UserRegistrationView, UserViewSet,
@@ -33,6 +34,7 @@ urlpatterns = [
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', CustomTokenVerifyView.as_view(), name='token_verify'),
+    path('api/calendario/', CalendarView.as_view(), name='calendar'),
     path('api/estatisticas/', StatisticsView.as_view(), name='statistics'),
     path('api/registro/', UserRegistrationView.as_view(), name='user_registration'),
     path('api/', include(router.urls)),
