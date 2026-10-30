@@ -1,52 +1,54 @@
+"""Configuração Django do Fut de Sexta.
+
+PostgreSQL (Supabase) é selecionado por DATABASE_URL; Cloudinary armazena uploads
+quando CLOUDINARY_URL está configurada. Credenciais nunca são impressas.
+"""
+
 import os
 from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
+from django.core.management.utils import get_random_secret_key
 from dotenv import load_dotenv
 
-# ============================================================
-# Carregamento das variáveis de ambiente
-# ============================================================
-
-load_dotenv()
-
-# ============================================================
-# Caminhos do projeto
-# ============================================================
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
 
-# ============================================================
-# Configurações básicas
-# ============================================================
+DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured('Defina SECRET_KEY no ambiente de produção.')
+    SECRET_KEY = get_random_secret_key()
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
-DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
-ALLOWED_HOSTS = ['*']
-
-# ============================================================
-# Frontend autorizado
-# ============================================================
-
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
 FRONTEND_URLS = [
     url.strip()
-    for url in os.getenv(
-        'FRONTEND_URLS',
-        'http://localhost:5173,http://127.0.0.1:5173'
-    ).split(',')
+    for url in os.getenv('FRONTEND_URLS', 'http://localhost:5173,http://127.0.0.1:5173').split(',')
     if url.strip()
 ]
-
-CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')
-
 CORS_ALLOWED_ORIGINS = FRONTEND_URLS
 CSRF_TRUSTED_ORIGINS = FRONTEND_URLS
-CORS_ALLOW_CREDENTIALS = True
-
-# ============================================================
-# Aplicações instaladas
-# ============================================================
+CORS_ALLOW_CREDENTIALS = False
+EMAIL_BACKEND = (
+    'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
+)
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'true').lower() == 'true'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'naoresponda@futdesexta.local')
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = not DEBUG and os.getenv('SECURE_SSL_REDIRECT', 'true').lower() == 'true'
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = 'no-referrer'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -55,45 +57,27 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # Terceiros
     'corsheaders',
     'django_extensions',
     'django_filters',
     'drf_spectacular',
     'rest_framework',
-
-    # Aplicações do projeto
     'core',
 ]
-
-# ============================================================
-# Middlewares
-# ============================================================
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-# ============================================================
-# URLs
-# ============================================================
-
 ROOT_URLCONF = 'app.urls'
 WSGI_APPLICATION = 'app.wsgi.application'
-
-# ============================================================
-# Templates
-# ============================================================
-
+ASGI_APPLICATION = 'app.asgi.application'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -105,180 +89,77 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-            ],
+            ]
         },
-    },
+    }
 ]
-
-# ============================================================
-# Banco de dados
-# ============================================================
-
 DATABASES = {
     'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
         conn_max_age=600,
         conn_health_checks=True,
     )
 }
-
-# ============================================================
-# Validação de senhas
-# ============================================================
-
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
-
-# ============================================================
-# Internacionalização
-# ============================================================
-
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True
 USE_TZ = True
-
-# ============================================================
-# Arquivos estáticos
-# ============================================================
-
 STATIC_URL = '/static/'
-
-# ============================================================
-# Arquivos enviados pelos usuários
-# ============================================================
-
-MEDIA_ENDPOINT = '/media/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 FILE_UPLOAD_PERMISSIONS = 0o640
-
-# Durante o desenvolvimento o frontend precisa acessar
-# diretamente o servidor Django.
-
-MEDIA_URL = 'http://127.0.0.1:8000/media/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# ============================================================
-# Cloudinary (opcional)
-# ============================================================
-
-if CLOUDINARY_URL:
-    # Em produção, os arquivos enviados ficam armazenados
-    # no Cloudinary.
-
-    INSTALLED_APPS += [
-        'cloudinary',
-        'cloudinary_storage',
-    ]
-
-    MEDIA_URL = '/media/'
-    STORAGES = {
-        'default': {
-            'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
-        },
-        'staticfiles': {
-            'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
-        },
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+}
+if os.getenv('CLOUDINARY_URL'):
+    INSTALLED_APPS.extend(['cloudinary', 'cloudinary_storage'])
+    STORAGES['default'] = {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
     }
 
-# ============================================================
-# Modelo padrão de chave primária
-# ============================================================
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# ============================================================
-# Modelo de usuário
-# ============================================================
-
 AUTH_USER_MODEL = 'core.User'
-
-# ============================================================
-# Django REST Framework
-# ============================================================
-
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
+    'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
-    ),
-
-    'DEFAULT_SCHEMA_CLASS':
-        'drf_spectacular.openapi.AutoSchema',
-
-    'DEFAULT_PAGINATION_CLASS':
-        'app.pagination.CustomPagination',
-
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PAGINATION_CLASS': 'app.pagination.CustomPagination',
     'PAGE_SIZE': 10,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+        'login': '10/hour',
+        'registration': '5/hour',
+        'users_search': '60/hour',
+        'account_recovery': '5/hour',
+        'email_verification': '10/hour',
+        'geocoding': '30/hour',
+    },
 }
-
-# ============================================================
-# OpenAPI / Swagger
-# ============================================================
-
 SPECTACULAR_SETTINGS = {
-    'TITLE': '<PROJETO> API',
-    'DESCRIPTION': 'API para o projeto <descreva aqui seu projeto>.',
-    'VERSION': '1.0.0',
+    'TITLE': 'Fut de Sexta — API',
+    'DESCRIPTION': 'API de equipes privadas, partidas e competições amadoras.',
+    'VERSION': '0.1.0',
 }
-
-# ============================================================
-# Simple JWT
-# ============================================================
-
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=3),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
-
-# ============================================================
-# Informações de configuração (debug)
-# ============================================================
-
-print('=' * 70)
-print('CONFIGURAÇÃO DA APLICAÇÃO')
-print('=' * 70)
-
-print(f'DEBUG....................: {DEBUG if DEBUG else "NÃO DEFINIDO"}')
-print(f'SECRET_KEY...............: {SECRET_KEY if SECRET_KEY else "NÃO DEFINIDA"}')
-
-print()
-
-print(f'DATABASE ENGINE.............: {DATABASES["default"]["ENGINE"]}')
-print(f'DATABASE NAME...............: {DATABASES["default"]["NAME"]}')
-
-print()
-
-print(f'FRONTEND_URLS ({len(FRONTEND_URLS)}).......: {FRONTEND_URLS}')
-print(f'CORS_ALLOWED_ORIGINS....: {CORS_ALLOWED_ORIGINS}')
-print(f'CSRF_TRUSTED_ORIGINS....: {CSRF_TRUSTED_ORIGINS}')
-
-print()
-
-print(f'MEDIA_URL...............: {MEDIA_URL}')
-print(f'MEDIA_ROOT..............: {MEDIA_ROOT}')
-
-print()
-
-print(f'CLOUDINARY..............: {"SIM" if CLOUDINARY_URL else "NÃO"}')
-
-if CLOUDINARY_URL:
-    print(f'CLOUDINARY_URL..........: {CLOUDINARY_URL}')
-
-print('=' * 70)

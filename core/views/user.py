@@ -1,42 +1,50 @@
-from drf_spectacular.utils import extend_schema
+"""Consulta pública limitada e edição do próprio perfil."""
+
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from core.models import User
-from core.serializers import UserRegistrationSerializer, UserSerializer
+from core.serializers import UserPrivateSerializer, UserRegistrationSerializer, UserSerializer
 
 
-class UserViewSet(ModelViewSet):
-    queryset = User.objects.all().order_by('id')
+class UserViewSet(ReadOnlyModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+    throttle_scope = 'users_search'
+    queryset = User.objects.filter(is_active=True).order_by('id')
 
-    @extend_schema(
-        summary="Dados do usuário autenticado",
-        description="Retorna os dados do usuário autenticado.",
-        responses={200: UserSerializer, 401: None},
+    def get_queryset(self):
+        qs = super().get_queryset()
+        term = self.request.query_params.get('search', '').strip()
+        if self.action == 'list':
+            if len(term) < 2:
+                return qs.none()
+            return qs.filter(Q(name__icontains=term) | Q(username__icontains=term))
+        return qs
+
+    @action(
+        detail=False, methods=['get', 'patch'], url_path='me', parser_classes=[JSONParser, MultiPartParser, FormParser]
     )
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
-        """ Retorna os dados do usuário autenticado."""
-        user = request.user
-        serializer = UserSerializer(user)
+        if request.method == 'PATCH':
+            serializer = UserPrivateSerializer(
+                request.user, data=request.data, partial=True, context={'request': request}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        else:
+            serializer = UserPrivateSerializer(request.user, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@extend_schema(
-    summary="Registro de novo usuário",
-    description="Cria um novo usuário no sistema. Não requer autenticação.",
-    request=UserRegistrationSerializer,
-    responses={201: UserRegistrationSerializer, 400: None},
-)
 class UserRegistrationView(CreateAPIView):
-    """Endpoint para registro de novos usuários."""
-
     queryset = User.objects.all()
     serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
+    throttle_scope = 'registration'
