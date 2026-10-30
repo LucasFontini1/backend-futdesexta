@@ -132,13 +132,17 @@ class TeamInvitationViewSet(viewsets.ReadOnlyModelViewSet):
             if invite.expires_at <= timezone.now():
                 invite.status = TeamInvitation.Status.EXPIRED
                 invite.save(update_fields=['status'])
-                raise ValidationError({'detail': 'Convite expirado.'})
-            TeamMembership.objects.get_or_create(
-                team=invite.team, user=request.user,
-                defaults={'role': TeamMembership.Role.MEMBER},
-            )
-            invite.status = TeamInvitation.Status.ACCEPTED
-            invite.save(update_fields=['status'])
+                expired = True
+            else:
+                TeamMembership.objects.get_or_create(
+                    team=invite.team, user=request.user,
+                    defaults={'role': TeamMembership.Role.MEMBER},
+                )
+                invite.status = TeamInvitation.Status.ACCEPTED
+                invite.save(update_fields=['status'])
+                expired = False
+        if expired:
+            raise ValidationError({'detail': 'Convite expirado.'})
         return Response(TeamInvitationSerializer(invite).data)
 
     @action(detail=True, methods=['post'], url_path='recusar')
