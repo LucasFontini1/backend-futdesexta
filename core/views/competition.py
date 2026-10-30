@@ -9,13 +9,14 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from core.models import (
-    Competition, CompetitionAdmin, CompetitionFixture, CompetitionInvitation,
+    Competition, CompetitionAdmin, CompetitionBye, CompetitionFixture, CompetitionInvitation,
     CompetitionTeam, Match, MatchResult, MatchSide, Team,
 )
 from core.serializers.competition import (
     CompetitionFixtureSerializer, CompetitionInvitationSerializer, CompetitionSerializer,
 )
 from core.views.team import is_admin
+from core.services.bracket import create_knockout_round
 
 
 def is_comp_admin(comp, user):
