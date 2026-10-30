@@ -4,6 +4,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 from core.views.statistics import StatisticsView
+from core.views.recurrence import RecurrenceViewSet
 from core.views import (
     CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView,
     MatchViewSet, TeamInvitationViewSet, TeamViewSet, UserRegistrationView, UserViewSet,
@@ -14,6 +15,7 @@ router.register(r'usuarios', UserViewSet, basename='usuarios')
 router.register(r'equipes', TeamViewSet, basename='equipes')
 router.register(r'convites-equipe', TeamInvitationViewSet, basename='convites-equipe')
 router.register(r'partidas', MatchViewSet, basename='partidas')
+router.register(r'recorrencias', RecurrenceViewSet, basename='recorrencias')
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
