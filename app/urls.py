@@ -5,13 +5,14 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 from rest_framework.routers import DefaultRouter
 from core.views import (
     CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView,
-    TeamInvitationViewSet, TeamViewSet, UserRegistrationView, UserViewSet,
+    MatchViewSet, TeamInvitationViewSet, TeamViewSet, UserRegistrationView, UserViewSet,
 )
 
 router = DefaultRouter()
 router.register(r'usuarios', UserViewSet, basename='usuarios')
 router.register(r'equipes', TeamViewSet, basename='equipes')
 router.register(r'convites-equipe', TeamInvitationViewSet, basename='convites-equipe')
+router.register(r'partidas', MatchViewSet, basename='partidas')
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
