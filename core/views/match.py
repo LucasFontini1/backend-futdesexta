@@ -7,11 +7,12 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from core.models import Match, MatchAttendance, Team
+from core.views.football import MatchFootballActions
 from core.serializers import AttendanceSerializer, MatchSerializer
 from core.views.team import is_admin
 
 
-class MatchViewSet(viewsets.ModelViewSet):
+class MatchViewSet(MatchFootballActions, viewsets.ModelViewSet):
     serializer_class = MatchSerializer
     permission_classes = [IsAuthenticated]
 
