@@ -21,7 +21,9 @@ class MatchViewSet(MatchFootballActions, viewsets.ModelViewSet):
     def get_queryset(self):
         return Match.objects.filter(
             Q(team__memberships__user=self.request.user) |
-            Q(sides__team__memberships__user=self.request.user)
+            Q(sides__team__memberships__user=self.request.user) |
+            Q(competition_fixture__competition__owner=self.request.user) |
+            Q(competition_fixture__competition__administrators__user=self.request.user)
         ).select_related('team').distinct().order_by('starts_at')
 
     def perform_create(self, serializer):
