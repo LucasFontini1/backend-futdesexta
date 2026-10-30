@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from core.models import FriendlyInvitation, Match, MatchSide
 from core.serializers.friendly import FriendlyInvitationSerializer
 from core.views.team import is_admin
+from core.services.notifications import notify_team
 
 
 class FriendlyViewSet(viewsets.ModelViewSet):
@@ -27,7 +28,8 @@ class FriendlyViewSet(viewsets.ModelViewSet):
         from_team = serializer.validated_data['from_team']
         if not is_admin(from_team, self.request.user):
             raise PermissionDenied('Somente administradores convidam para amistosos.')
-        serializer.save(invited_by=self.request.user)
+        invitation = serializer.save(invited_by=self.request.user)
+        notify_team(invitation.to_team, 'friendly_invitation', 'Sua equipe recebeu um convite de amistoso.', '/amistosos', key=f'friendly:{invitation.pk}')
 
     @action(detail=True, methods=['post'], url_path='responder')
     def respond(self, request, pk=None):
@@ -55,6 +57,7 @@ class FriendlyViewSet(viewsets.ModelViewSet):
             else:
                 invitation.status = FriendlyInvitation.Status.DECLINED
             invitation.save()
+        notify_team(invitation.from_team, 'friendly_response', 'O convite de amistoso recebeu uma resposta.', '/amistosos', key=f'friendly-response:{invitation.pk}')
         return Response(self.get_serializer(invitation).data)
 
     @action(detail=True, methods=['post'], url_path='aprovar-resultado')
