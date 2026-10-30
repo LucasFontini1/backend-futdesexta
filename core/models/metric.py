@@ -1,4 +1,5 @@
 """Estatísticas opcionais informadas pelos administradores de cada partida."""
+
 from django.db import models
 
 
