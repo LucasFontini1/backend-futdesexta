@@ -145,6 +145,7 @@ REST_FRAMEWORK = {
         'users_search': '60/hour',
         'account_recovery': '5/hour',
         'email_verification': '10/hour',
+        'geocoding': '30/hour',
     },
 }
 SPECTACULAR_SETTINGS = {
