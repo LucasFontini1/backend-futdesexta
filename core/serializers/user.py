@@ -73,7 +73,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('accepted_terms', None)
-        user = User.objects.create_user(**validated_data, is_active=False)
+        user = User.objects.create_user(**validated_data, is_active=settings.DEBUG)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
         frontend = settings.FRONTEND_URLS[0].rstrip('/')

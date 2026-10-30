@@ -2,7 +2,7 @@
 
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework.test import APIClient
@@ -14,6 +14,7 @@ class AccountSecurityTest(TestCase):
     def setUp(self):
         self.client = APIClient()
 
+    @override_settings(DEBUG=False)
     def test_accept_terms_and_verify_email_before_login(self):
         data = {
             'email': 'verified@example.com',
@@ -39,6 +40,28 @@ class AccountSecurityTest(TestCase):
         self.assertEqual(result.status_code, 200)
         user.refresh_from_db()
         self.assertTrue(user.is_active)
+
+    @override_settings(DEBUG=True)
+    def test_local_registration_allows_immediate_login(self):
+        data = {
+            'email': 'local-login@example.com',
+            'username': 'local_user',
+            'name': 'Pessoa Local',
+            'password': 'Strong-Pass-2026!',
+            'password_confirm': 'Strong-Pass-2026!',
+            'accepted_terms': True,
+        }
+        registration = self.client.post('/api/registro/', data, format='json')
+        self.assertEqual(registration.status_code, 201)
+        user = User.objects.get(email=data['email'])
+        self.assertTrue(user.is_active)
+        login = self.client.post(
+            '/api/token/',
+            {'email': data['email'], 'password': data['password']},
+            format='json',
+        )
+        self.assertEqual(login.status_code, 200)
+        self.assertIn('access', login.data)
 
     def test_password_reset_token_single_use(self):
         user = User.objects.create_user('recovery@example.com', 'previous-Pass-2026!', username='recoverer')
