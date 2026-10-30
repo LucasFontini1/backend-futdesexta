@@ -1,5 +1,7 @@
 """Verificação de e-mail e recuperação de senha com tokens temporários."""
 from django.conf import settings
+from uuid import uuid4
+from django.db import transaction
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -98,3 +100,34 @@ class ChangePasswordView(APIView):
         user.set_password(new_password)
         user.save(update_fields=['password'])
         return Response({'changed': True})
+
+
+class DeleteAccountView(APIView):
+    """Desativa e anonimiza a conta preservando integridade dos placares."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        if not user.check_password(str(request.data.get('password', ''))):
+            return Response({'password': 'Senha incorreta.'}, status=400)
+        if user.owned_teams.exists() or user.competitions_owned.exists():
+            return Response(
+                {'detail': 'Transfira a propriedade das equipes e competições antes de excluir sua conta.'},
+                status=400,
+            )
+        with transaction.atomic():
+            from core.models import Player, TeamMembership, Notification, PushSubscription
+            Player.objects.filter(linked_user=user).update(linked_user=None)
+            TeamMembership.objects.filter(user=user).delete()
+            Notification.objects.filter(user=user).delete()
+            PushSubscription.objects.filter(user=user).delete()
+            user.email = f'deleted-{user.pk}-{uuid4().hex}@invalid.local'
+            user.name = ''
+            user.username = None
+            user.photo = None
+            user.is_active = False
+            user.set_unusable_password()
+            user.save(update_fields=[
+                'email', 'name', 'username', 'photo', 'is_active', 'password',
+            ])
+        return Response({'deleted': True})
