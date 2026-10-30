@@ -141,6 +141,91 @@ class CompetitionViewSet(viewsets.ModelViewSet):
         return Response(sorted(rows.values(), key=lambda r: (-r['points'], -r['wins'], -r['goal_difference'], -r['goals_for'], r['name'])))
 
 
+    @action(detail=True, methods=['post'], url_path='gerar-chave')
+    def create_bracket(self, request, pk=None):
+        competition = self.get_object()
+        if not is_comp_admin(competition, request.user):
+            raise PermissionDenied('Apenas organizadores geram chaves.')
+        if competition.format != Competition.Format.KNOCKOUT:
+            raise ValidationError('Apenas torneios mata-mata usam chaveamento.')
+        if competition.fixtures.exists() or competition.byes.exists():
+            raise ValidationError('Chaveamento já iniciado.')
+        teams = list(Team.objects.filter(
+            competition_participations__competition=competition
+        ).order_by('name', 'id'))
+        if len(teams) < 2:
+            raise ValidationError('São necessárias pelo menos duas equipes aceitas.')
+        try:
+            start = serializers.DateTimeField().run_validation(request.data.get('starts_at'))
+            end = serializers.DateTimeField().run_validation(request.data.get('ends_at'))
+        except Exception as exc:
+            raise ValidationError('Informe data e hora de início e término.') from exc
+        return Response(create_knockout_round(competition, teams, 1, start, end))
+
+    @action(detail=True, methods=['post'], url_path='definir-vencedor')
+    def decide_winner(self, request, pk=None):
+        competition = self.get_object()
+        if not is_comp_admin(competition, request.user):
+            raise PermissionDenied('Apenas organizadores definem desempates.')
+        fixture = get_object_or_404(CompetitionFixture, pk=request.data.get('fixture'), competition=competition)
+        result = MatchResult.objects.filter(match=fixture.match, match__status=Match.Status.FINISHED).first()
+        if not result:
+            raise ValidationError('O confronto precisa estar finalizado.')
+        winner_id = request.data.get('team')
+        if not str(winner_id).isdigit() or int(winner_id) not in {fixture.home_team_id, fixture.away_team_id}:
+            raise ValidationError('Vencedor precisa ser uma das equipes do confronto.')
+        if result.home_score != result.away_score:
+            expected = fixture.home_team_id if result.home_score > result.away_score else fixture.away_team_id
+            if int(winner_id) != expected:
+                raise ValidationError('Vencedor incompatível com o placar.')
+        fixture.winner_id = int(winner_id)
+        fixture.save(update_fields=['winner'])
+        return Response(CompetitionFixtureSerializer(fixture).data)
+
+    @action(detail=True, methods=['post'], url_path='avancar-chave')
+    def advance_bracket(self, request, pk=None):
+        competition = self.get_object()
+        if not is_comp_admin(competition, request.user):
+            raise PermissionDenied('Apenas organizadores avançam chaves.')
+        if competition.format != Competition.Format.KNOCKOUT:
+            raise ValidationError('Formato inválido.')
+        last = competition.fixtures.order_by('-round').first()
+        if not last:
+            raise ValidationError('Gere os confrontos iniciais primeiro.')
+        current_round = last.round
+        qualifiers = []
+        fixtures = list(competition.fixtures.filter(round=current_round).select_related('match', 'home_team', 'away_team'))
+        for fixture in fixtures:
+            result = MatchResult.objects.filter(
+                match=fixture.match, match__status=Match.Status.FINISHED
+            ).first()
+            if not result:
+                raise ValidationError('Todos os jogos da rodada precisam estar finalizados.')
+            if fixture.winner_id:
+                qualifiers.append(fixture.winner)
+            elif result.home_score > result.away_score:
+                qualifiers.append(fixture.home_team)
+            elif result.away_score > result.home_score:
+                qualifiers.append(fixture.away_team)
+            else:
+                raise ValidationError('Empate precisa de vencedor por desempate.')
+        qualifiers.extend(bye.team for bye in CompetitionBye.objects.filter(
+            competition=competition, round=current_round
+        ).select_related('team'))
+        if len(qualifiers) == 1:
+            return Response({'champion': qualifiers[0].pk, 'completed': True})
+        if len(qualifiers) < 2:
+            raise ValidationError('Não há classificadas suficientes.')
+        try:
+            start = serializers.DateTimeField().run_validation(request.data.get('starts_at'))
+            end = serializers.DateTimeField().run_validation(request.data.get('ends_at'))
+        except Exception as exc:
+            raise ValidationError('Informe o início e o fim da próxima rodada.') from exc
+        return Response(create_knockout_round(
+            competition, qualifiers, current_round + 1, start, end
+        ))
+
+
 class CompetitionInvitationViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = CompetitionInvitationSerializer
