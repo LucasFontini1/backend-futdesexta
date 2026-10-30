@@ -1,5 +1,6 @@
 """Caixa de notificações privada e registro de inscrições push."""
 from django.utils import timezone
+from urllib.parse import urlparse
 from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -21,8 +22,15 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         fields = ['endpoint', 'p256dh', 'auth']
 
     def validate_endpoint(self, value):
-        if not value.startswith('https://'):
-            raise serializers.ValidationError('Endpoint de push precisa usar HTTPS.')
+        host = urlparse(value).hostname or ''
+        allowed = (
+            host == 'fcm.googleapis.com' or
+            host == 'updates.push.services.mozilla.com' or
+            host.endswith('.push.apple.com') or
+            host.endswith('.notify.windows.com')
+        )
+        if not value.startswith('https://') or not allowed:
+            raise serializers.ValidationError('Provedor de push não permitido.')
         return value
 
 
