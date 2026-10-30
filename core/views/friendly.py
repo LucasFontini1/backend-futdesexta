@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from core.models import FriendlyInvitation, Match, MatchSide
 from core.serializers.friendly import FriendlyInvitationSerializer
 from core.services.notifications import notify_team
+from core.services.schedule import assert_teams_available
 from core.views.team import is_admin
 
 
@@ -54,6 +55,10 @@ class FriendlyViewSet(viewsets.ModelViewSet):
             if invitation.status != FriendlyInvitation.Status.PENDING:
                 raise ValidationError('Convite já respondido.')
             if decision:
+                assert_teams_available(
+                    [invitation.from_team_id, invitation.to_team_id],
+                    invitation.starts_at, invitation.ends_at,
+                )
                 # Uma partida oficial, compartilhada entre equipes.
                 match = Match.objects.create(
                     team=invitation.from_team,
