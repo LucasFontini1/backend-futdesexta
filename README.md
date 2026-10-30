@@ -1,44 +1,65 @@
-# Fut de Sexta — Backend
+# Fut de Sexta — API Django
 
-API REST Django + Django REST Framework do Fut de Sexta. Mantém a estrutura
-original `app/` (configuração) e `core/{models,serializers,views}/` (domínios)
-dos repositórios de referência do IFC.
+Backend do Fut de Sexta: **Django + Django REST Framework + PostgreSQL (Supabase)**, com armazenamento de imagens via **Cloudinary** quando configurado. Mantém a organização original do Instituto Federal Catarinense: `app/` para configuração e `core/models/`, `core/serializers/`, `core/views/`, `core/services/`, `core/migrations/`, `core/tests/` separados por domínio.
 
-## Executar localmente
+> Branch de desenvolvimento em revisão, sem aprovação para produção. Nem todos os serviços externos estão configurados ou verificados.
 
-1. Instale Python compatível e PDM.
-2. Rode `pdm install`.
-3. Copie `.env.example` para `.env`, configure `DEBUG=true` e uma `SECRET_KEY` de desenvolvimento.
-4. Execute `pdm run migrate` e `pdm run dev`.
-5. API em `http://127.0.0.1:8000/api/` e documentação em `/api/doc/`.
+## Rodar localmente
 
-## Banco, imagens e autenticação
+1. Instale Python 3.12 e dependências: `python -m pip install -r requirements.txt`.
+2. Copie `.env.example` como `.env` e configure `DEBUG=true` e uma `SECRET_KEY` segura para desenvolvimento.
+3. Execute `python manage.py migrate`.
+4. Execute `python manage.py runserver 127.0.0.1:8000`.
+5. Documentação OpenAPI em `http://127.0.0.1:8000/api/doc/`.
 
-- SQLite em desenvolvimento; Supabase PostgreSQL via `DATABASE_URL` em produção.
-- Cloudinary via `CLOUDINARY_URL`, **somente no servidor**. Sem credenciais, uploads ficam locais para desenvolvimento.
-- Django mantém o modelo de usuários, hash de senhas e regras de autorização. A API existente usa JWT SimpleJWT com access token curto; não exponha tokens em logs nem salve chaves no repositório.
-- As equipes são privadas: todo acesso aos detalhes precisa ser autorizado por objeto no backend.
-- Não publique arquivos pessoais nem dumps de banco; imagens de usuários dependem de permissões de acesso e política de privacidade.
+PDM também é suportado. Antes de usar `pdm install` em ambiente real, atualize o lockfile (`pdm lock`) depois das alterações em `pyproject.toml`; não confie no lock antigo do template.
 
-## Qualidade
+## Domínios e API
 
-`pdm run check` (Ruff), `pdm run format` (Ruff),
-`pdm run test` (testes Django), `python manage.py check --deploy`
-(revisão adicional das configurações de produção).
-Os testes em CI não substituem testes de integração reais com Supabase e Cloudinary.
+- `/api/registro/`, `/api/token/`, `/api/usuarios/` e `/api/usuarios/me/`: cadastro, login e perfil.
+- `/api/conta/`: confirmação de e-mail, recuperação e alteração de senha, solicitação de exclusão.
+- `/api/equipes/`, `/api/convites-equipe/`: equipes privadas, convites, elenco, administração e vínculos.
+- `/api/partidas/`, `/api/recorrencias/`: peladas, presença, lados, escalações e resultado.
+- `/api/estatisticas/`: rankings por modalidade, com total geral.
+- `/api/amistosos/`, `/api/competicoes/`, `/api/convites-competicao/`: partidas entre equipes cadastradas e competições.
+- `/api/calendario/`, `/api/eventos/`, `/api/notificacoes/`: agenda, eventos e alertas.
+- `/api/geocodificar/`, `/api/partidas/<id>/clima/`: endereço e previsão meteorológica.
 
-## Estrutura
+## Banco e Cloudinary
 
-- `app/`: settings, urls, WSGI/ASGI e paginação.
-- `core/models/`: entidades e regras estruturais.
-- `core/serializers/`: validação e exposição controlada dos dados.
-- `core/views/`: endpoints, permissão por objeto e ações.
-- `core/migrations/`: evolução do esquema Django.
-- `core/tests/`: testes de funcionamento e segurança.
-- `http/`: coleção Bruno legada (não usar como especificação do Fut de Sexta).
-- `scripts/`: ferramentas auxiliares de desenvolvimento.
+Configure `DATABASE_URL` com **string de conexão do Supabase PostgreSQL** com SSL. As migrações são mantidas pelo Django, não pelo Supabase Auth; o Django centraliza a autorização. Use `CLOUDINARY_URL` somente no servidor para fotos de perfil, escudos, jogadores, competições e eventos. Nunca exponha uma chave do Cloudinary ou o acesso privilegiado do Supabase no frontend.
 
-## Planejamento
+Em desenvolvimento, SQLite e sistema de arquivos local são usados por padrão. Testes da CI usam SQLite; portanto **não substituem testes reais de PostgreSQL e Cloudinary**.
 
-Funcionalidades de peladas, estatísticas por categoria, amistosos e competições
-serão integradas por módulos. Não considerar documentação como implementação.
+## E-mail e push
+
+O cadastro exige confirmação de e-mail. Em desenvolvimento, mensagens são emitidas no console; em produção, configure `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` e `DEFAULT_FROM_EMAIL`. Para web push configure `VAPID_PRIVATE_KEY` e `VAPID_SUBJECT` no servidor. No frontend, somente a chave VAPID **pública**.
+
+Comandos que podem ser agendados por cron/scheduler com permissões restritas:
+
+```bash
+python manage.py gerar_peladas --weeks 8
+python manage.py lembrar_partidas
+python manage.py enviar_push
+```
+
+Evite executar os agendamentos em instâncias concorrentes sem um mecanismo de bloqueio distribuído em produção.
+
+## Qualidade e segurança
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py migrate --noinput
+python manage.py test
+ruff check --select F,E --ignore E501 app core
+ruff format --check app core
+```
+
+Testes contemplam autorização por objeto, convites, vínculos, partidas, placares, campeonatos e recuperação de senha. Antes de publicar, validar cabeçalhos e HTTPS no domínio real, limites de requisição com cache compartilhado, uploads, concorrência real em PostgreSQL e auditoria LGPD.
+
+## Pendências verificáveis
+
+Ainda requerem validação final: suíte ponta a ponta conjunta frontend/backend, integração real com Supabase/Cloudinary/SMTP/push, disponibilidade dos provedores de mapas/clima, configuração de agendador, licença (metadados herdados do template eram conflitantes), escalação de equipes adversárias no editor, revisão jurídica da política e deploy em HTTPS.
+
+Os PRs permanecem abertos. O projeto não deve ser apresentado como 100% concluído sem essas verificações.
