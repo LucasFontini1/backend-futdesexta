@@ -25,6 +25,9 @@ class TeamEventSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'organizer', 'created_at']
 
+    def validate_image(self, value):
+        return validate_user_image(value)
+
     def validate(self, data):
         if data.get('ends_at', getattr(self.instance, 'ends_at', None)) <= data.get(
             'starts_at', getattr(self.instance, 'starts_at', None)
