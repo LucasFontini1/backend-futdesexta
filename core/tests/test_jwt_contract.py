@@ -1,4 +1,5 @@
 """Contrato de JWT persistente no frontend, inspirado no padrão do projeto Momentum."""
+
 from django.test import TestCase
 from rest_framework.test import APIClient
 
@@ -24,7 +25,7 @@ class JwtSessionContractTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('access', response.data)
         self.assertIn('refresh', response.data)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {response.data['access']}")
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {response.data["access"]}')
         profile = self.client.get('/api/usuarios/me/')
         self.assertEqual(profile.status_code, 200)
         self.assertEqual(profile.data['email'], self.user.email)
