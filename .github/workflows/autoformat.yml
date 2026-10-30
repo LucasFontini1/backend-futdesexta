@@ -1,7 +1,7 @@
 name: Backend autoformat
 on:
   push:
-    branches: ['feature/foundation-security-20261030', 'feature/scheduling-integrity-20261030']
+    branches: ['feature/foundation-security-20261030', 'feature/scheduling-integrity-20261030', 'feature/player-optional-metrics-20261030']
 permissions:
   contents: write
 concurrency:
