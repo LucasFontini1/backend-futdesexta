@@ -3,6 +3,7 @@
 from rest_framework import serializers
 
 from core.models import Competition, CompetitionFixture, CompetitionInvitation
+from core.validators import validate_user_image
 
 
 class CompetitionSerializer(serializers.ModelSerializer):
@@ -22,6 +23,9 @@ class CompetitionSerializer(serializers.ModelSerializer):
             'created_at',
         ]
         read_only_fields = ['id', 'owner', 'created_at']
+
+    def validate_image(self, value):
+        return validate_user_image(value)
 
     def validate(self, data):
         start = data.get('starts_on', getattr(self.instance, 'starts_on', None))
