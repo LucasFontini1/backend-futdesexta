@@ -13,7 +13,12 @@ from core.views.team import is_admin
 
 class MatchFootballActions:
     def assert_admin(self, match, user):
-        if not is_admin(match.team, user):
+        authorized = is_admin(match.team, user)
+        if match.kind == Match.Kind.FRIENDLY:
+            authorized = authorized or match.sides.filter(
+                team__memberships__user=user, team__memberships__role__in=['owner', 'admin']
+            ).exists()
+        if not authorized:
             raise PermissionDenied('Somente administradores registram resultados e escalações.')
 
     @action(detail=True, methods=['get', 'post'], url_path='lados')
@@ -98,7 +103,14 @@ class MatchFootballActions:
             if goals is not None:
                 current.goals.all().delete()
                 GoalEvent.objects.bulk_create([GoalEvent(result=current, **goal) for goal in goals])
-            Match.objects.filter(pk=match.pk).update(status=Match.Status.FINISHED)
+            if match.kind == Match.Kind.FRIENDLY:
+                from core.models import FriendlyInvitation
+                FriendlyInvitation.objects.filter(match=match).update(
+                    result_approved_from=False, result_approved_to=False
+                )
+                Match.objects.filter(pk=match.pk).update(status=Match.Status.IN_PROGRESS)
+            else:
+                Match.objects.filter(pk=match.pk).update(status=Match.Status.FINISHED)
             ResultRevision.objects.create(
                 result=current, changed_by=request.user, before=before,
                 after={'home_score': current.home_score, 'away_score': current.away_score},
