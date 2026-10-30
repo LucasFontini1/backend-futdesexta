@@ -10,6 +10,7 @@ from core.views.competition import CompetitionViewSet, CompetitionInvitationView
 from core.views.event import TeamEventViewSet
 from core.views.notification import NotificationViewSet
 from core.views.calendar import CalendarView
+from core.views.location import GeocodeView, MatchWeatherView
 from core.views.account_security import VerifyEmailView, PasswordResetRequestView, PasswordResetConfirmView, ChangePasswordView
 from core.views import (
     CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView,
@@ -35,6 +36,8 @@ urlpatterns = [
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', CustomTokenVerifyView.as_view(), name='token_verify'),
+    path('api/geocodificar/', GeocodeView.as_view(), name='geocode'),
+    path('api/partidas/<int:pk>/clima/', MatchWeatherView.as_view(), name='match-weather'),
     path('api/calendario/', CalendarView.as_view(), name='calendar'),
     path('api/estatisticas/', StatisticsView.as_view(), name='statistics'),
     path('api/registro/', UserRegistrationView.as_view(), name='user_registration'),
