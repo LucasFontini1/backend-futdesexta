@@ -1,4 +1,5 @@
 """Valida conflitos de agenda, sem comprometer a privacidade das equipes."""
+
 from datetime import timedelta
 
 from django.db import transaction
@@ -25,8 +26,10 @@ class ScheduleConflictsTest(TestCase):
 
     def test_rejects_overlap_including_boundary(self):
         Match.objects.create(
-            team=self.first, title='Já agendado',
-            starts_at=self.starts_at, ends_at=self.ends_at,
+            team=self.first,
+            title='Já agendado',
+            starts_at=self.starts_at,
+            ends_at=self.ends_at,
         )
         with self.assertRaises(ValidationError), transaction.atomic():
             assert_teams_available(
@@ -43,22 +46,28 @@ class ScheduleConflictsTest(TestCase):
 
     def test_canceled_match_does_not_reserve_time(self):
         Match.objects.create(
-            team=self.second, title='Cancelado', status=Match.Status.CANCELED,
-            starts_at=self.starts_at, ends_at=self.ends_at,
+            team=self.second,
+            title='Cancelado',
+            status=Match.Status.CANCELED,
+            starts_at=self.starts_at,
+            ends_at=self.ends_at,
         )
         with transaction.atomic():
             assert_teams_available([self.first.pk, self.second.pk], self.starts_at, self.ends_at)
 
     def test_invited_friendly_cannot_overlap_another_match(self):
         Match.objects.create(
-            team=self.first, title='Pelada já agendada',
-            starts_at=self.starts_at, ends_at=self.ends_at,
+            team=self.first,
+            title='Pelada já agendada',
+            starts_at=self.starts_at,
+            ends_at=self.ends_at,
         )
         self.client.force_authenticate(self.owner)
         invited = self.client.post(
             '/api/amistosos/',
             {
-                'from_team': self.first.pk, 'to_team': self.second.pk,
+                'from_team': self.first.pk,
+                'to_team': self.second.pk,
                 'starts_at': self.starts_at.isoformat(),
                 'ends_at': self.ends_at.isoformat(),
             },
@@ -76,8 +85,10 @@ class ScheduleConflictsTest(TestCase):
 
     def test_competition_fixture_rejects_conflicting_team(self):
         Match.objects.create(
-            team=self.second, title='Outra partida',
-            starts_at=self.starts_at, ends_at=self.ends_at,
+            team=self.second,
+            title='Outra partida',
+            starts_at=self.starts_at,
+            ends_at=self.ends_at,
         )
         competition = Competition.objects.create(
             owner=self.owner, name='Copa de Sexta', format=Competition.Format.LEAGUE
