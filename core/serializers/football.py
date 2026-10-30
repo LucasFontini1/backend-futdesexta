@@ -52,8 +52,13 @@ class MatchResultSerializer(serializers.ModelSerializer):
                 away_count += 1
             scorer = goal.get('scorer')
             keeper = goal.get('conceded_by')
-            if scorer and not LineupSlot.objects.filter(match=match, player=scorer).exists():
-                raise serializers.ValidationError('Autor de gol não escalado.')
+            if scorer:
+                scorer_slot = LineupSlot.objects.filter(match=match, player=scorer).first()
+                if not scorer_slot:
+                    raise serializers.ValidationError('Autor de gol não escalado.')
+                same_side = scorer_slot.side_id == scoring_side.pk
+                if same_side == bool(goal.get('own_goal', False)):
+                    raise serializers.ValidationError('Gol normal deve ser do autor pelo lado que marcou; gol contra deve beneficiar o adversário.')
             if keeper:
                 eligible = LineupSlot.objects.filter(
                     match=match, player=keeper, goalkeeper=True
