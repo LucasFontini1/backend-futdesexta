@@ -1,12 +1,16 @@
 """Operações oficiais de escalação e resultado; permissão verificada na API."""
+
 from django.db import transaction
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
+
 from core.models import GoalEvent, LineupSlot, Match, MatchResult, MatchSide, Player, ResultRevision
 from core.serializers.football import (
-    LineupSlotSerializer, MatchResultSerializer, MatchSideSerializer,
+    LineupSlotSerializer,
+    MatchResultSerializer,
+    MatchSideSerializer,
 )
 from core.views.team import is_admin
 
@@ -15,11 +19,15 @@ class MatchFootballActions:
     def assert_admin(self, match, user):
         authorized = is_admin(match.team, user)
         if match.kind == Match.Kind.FRIENDLY:
-            authorized = authorized or match.sides.filter(
-                team__memberships__user=user, team__memberships__role__in=['owner', 'admin']
-            ).exists()
+            authorized = (
+                authorized
+                or match.sides.filter(
+                    team__memberships__user=user, team__memberships__role__in=['owner', 'admin']
+                ).exists()
+            )
         if match.kind == Match.Kind.COMPETITION:
             from core.views.competition import is_comp_admin
+
             authorized = is_comp_admin(match.competition_fixture.competition, user)
         if not authorized:
             raise PermissionDenied('Somente administradores registram resultados e escalações.')
@@ -61,10 +69,12 @@ class MatchFootballActions:
         entries = []
         writable_sides = set(match.sides.values_list('id', flat=True))
         if match.kind == Match.Kind.FRIENDLY:
-            writable_sides = set(match.sides.filter(
-                team__memberships__user=request.user,
-                team__memberships__role__in=['owner', 'admin'],
-            ).values_list('id', flat=True))
+            writable_sides = set(
+                match.sides.filter(
+                    team__memberships__user=request.user,
+                    team__memberships__role__in=['owner', 'admin'],
+                ).values_list('id', flat=True)
+            )
         if match.kind == Match.Kind.COMPETITION:
             writable_sides = set(match.sides.values_list('id', flat=True))
         for item in serializer.validated_data:
@@ -115,6 +125,7 @@ class MatchFootballActions:
             GoalEvent.objects.bulk_create([GoalEvent(result=current, **goal) for goal in goals])
             if match.kind == Match.Kind.FRIENDLY:
                 from core.models import FriendlyInvitation
+
                 FriendlyInvitation.objects.filter(match=match).update(
                     result_approved_from=False, result_approved_to=False
                 )
@@ -122,7 +133,9 @@ class MatchFootballActions:
             else:
                 Match.objects.filter(pk=match.pk).update(status=Match.Status.FINISHED)
             ResultRevision.objects.create(
-                result=current, changed_by=request.user, before=before,
+                result=current,
+                changed_by=request.user,
+                before=before,
                 after={'home_score': current.home_score, 'away_score': current.away_score},
             )
         return Response(MatchResultSerializer(current).data)

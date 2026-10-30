@@ -1,9 +1,12 @@
 """Rankings derivados de resultados, separados por pelada, amistoso e competição."""
+
 from datetime import date
+
 from django.db.models import Q
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from core.models import GoalEvent, LineupSlot, Match, MatchResult, Player
 
 
@@ -29,9 +32,15 @@ def summarize_player(player, results):
         goals += GoalEvent.objects.filter(result=result, scorer=player, own_goal=False).count()
         conceded += GoalEvent.objects.filter(result=result, conceded_by=player).count()
     return {
-        'player': player.id, 'name': player.name, 'team': player.team_id,
-        'games': played, 'goals': goals, 'goals_conceded_identified': conceded,
-        'wins': wins, 'draws': draws, 'losses': losses,
+        'player': player.id,
+        'name': player.name,
+        'team': player.team_id,
+        'games': played,
+        'goals': goals,
+        'goals_conceded_identified': conceded,
+        'wins': wins,
+        'draws': draws,
+        'losses': losses,
     }
 
 
@@ -45,12 +54,17 @@ class StatisticsView(APIView):
         team_id = request.query_params.get('team')
         if team_id and not team_id.isdigit():
             return Response({'detail': 'Equipe inválida.'}, status=400)
-        qs = MatchResult.objects.filter(
-            match__status=Match.Status.FINISHED,
-        ).filter(
-            Q(match__team__memberships__user=request.user) |
-            Q(match__sides__team__memberships__user=request.user)
-        ).select_related('match').distinct()
+        qs = (
+            MatchResult.objects
+            .filter(
+                match__status=Match.Status.FINISHED,
+            )
+            .filter(
+                Q(match__team__memberships__user=request.user) | Q(match__sides__team__memberships__user=request.user)
+            )
+            .select_related('match')
+            .distinct()
+        )
         players = Player.objects.filter(team__memberships__user=request.user).distinct()
         if team_id:
             qs = qs.filter(match__team_id=int(team_id))

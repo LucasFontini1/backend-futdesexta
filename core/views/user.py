@@ -1,12 +1,14 @@
 """Consulta pública limitada e edição do próprio perfil."""
+
 from django.db.models import Q
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+
 from core.models import User
 from core.serializers import UserPrivateSerializer, UserRegistrationSerializer, UserSerializer
 
@@ -26,8 +28,9 @@ class UserViewSet(ReadOnlyModelViewSet):
             return qs.filter(Q(name__icontains=term) | Q(username__icontains=term))
         return qs
 
-    @action(detail=False, methods=['get', 'patch'], url_path='me',
-            parser_classes=[JSONParser, MultiPartParser, FormParser])
+    @action(
+        detail=False, methods=['get', 'patch'], url_path='me', parser_classes=[JSONParser, MultiPartParser, FormParser]
+    )
     def me(self, request):
         if request.method == 'PATCH':
             serializer = UserPrivateSerializer(

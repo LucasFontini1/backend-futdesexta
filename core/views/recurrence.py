@@ -1,10 +1,12 @@
 """API de recorrência com permissões administrativas."""
+
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
 from core.models import RecurrenceRule, Team
 from core.serializers.recurrence import RecurrenceRuleSerializer
 from core.services.recurrence import generate_occurrences
@@ -16,9 +18,7 @@ class RecurrenceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return RecurrenceRule.objects.filter(
-            team__memberships__user=self.request.user
-        ).distinct().order_by('id')
+        return RecurrenceRule.objects.filter(team__memberships__user=self.request.user).distinct().order_by('id')
 
     def perform_create(self, serializer):
         team = get_object_or_404(Team, pk=self.request.data.get('team'))

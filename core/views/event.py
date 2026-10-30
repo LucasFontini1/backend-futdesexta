@@ -1,14 +1,16 @@
 """Eventos restritos aos membros da equipe e controle de presença."""
+
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
 from core.models import EventAttendance, Team, TeamEvent
 from core.serializers.event import EventAttendanceSerializer, TeamEventSerializer
-from core.views.team import is_admin
 from core.services.notifications import notify_team
+from core.views.team import is_admin
 
 
 class TeamEventViewSet(viewsets.ModelViewSet):
@@ -16,9 +18,7 @@ class TeamEventViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return TeamEvent.objects.filter(
-            team__memberships__user=self.request.user
-        ).distinct().order_by('starts_at')
+        return TeamEvent.objects.filter(team__memberships__user=self.request.user).distinct().order_by('starts_at')
 
     def perform_create(self, serializer):
         team = get_object_or_404(Team, pk=self.request.data.get('team'))
@@ -45,7 +45,8 @@ class TeamEventViewSet(viewsets.ModelViewSet):
         serializer = EventAttendanceSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         EventAttendance.objects.update_or_create(
-            event=event, user=request.user,
+            event=event,
+            user=request.user,
             defaults={'response': serializer.validated_data['response']},
         )
         return Response({'response': serializer.validated_data['response']})

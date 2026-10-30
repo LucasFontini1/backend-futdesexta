@@ -1,19 +1,19 @@
 """Ações administrativas de equipe e vínculos de jogadores."""
+
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
+
 from core.models import Player, PlayerLinkRequest, Team, TeamMembership
 from core.serializers.team import PlayerSerializer, TeamMembershipSerializer, TeamSerializer
 
 
 class TeamManagementActions:
     def require_admin(self, team, user):
-        if not TeamMembership.objects.filter(
-            team=team, user=user, role__in=['owner', 'admin']
-        ).exists():
+        if not TeamMembership.objects.filter(team=team, user=user, role__in=['owner', 'admin']).exists():
             raise PermissionDenied('Somente administradores.')
 
     @action(detail=True, methods=['post'], url_path='alterar-papel')
@@ -80,16 +80,22 @@ class TeamManagementActions:
         team = self.get_object()
         self.require_admin(team, request.user)
         if request.method == 'GET':
-            return Response(list(PlayerLinkRequest.objects.filter(
-                player__team=team, status='pending'
-            ).values('id', 'player_id', 'user_id', 'status')))
+            return Response(
+                list(
+                    PlayerLinkRequest.objects.filter(player__team=team, status='pending').values(
+                        'id', 'player_id', 'user_id', 'status'
+                    )
+                )
+            )
         choice = request.data.get('approve')
         if not isinstance(choice, bool):
             raise ValidationError('Informe approve como true ou false.')
         with transaction.atomic():
             link = get_object_or_404(
-                PlayerLinkRequest.objects.select_for_update(), pk=request.data.get('request_id'),
-                player__team=team, status='pending',
+                PlayerLinkRequest.objects.select_for_update(),
+                pk=request.data.get('request_id'),
+                player__team=team,
+                status='pending',
             )
             player = Player.objects.select_for_update().get(pk=link.player_id)
             if choice:

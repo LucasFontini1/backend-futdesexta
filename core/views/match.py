@@ -1,17 +1,19 @@
 """Criação de peladas e confirmação de presença protegidas por equipe."""
-from django.shortcuts import get_object_or_404
+
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
 from core.models import Match, MatchAttendance, Team
-from core.views.football import MatchFootballActions
 from core.serializers import AttendanceSerializer, MatchSerializer
-from core.views.team import is_admin
 from core.services.notifications import notify_team
+from core.views.football import MatchFootballActions
+from core.views.team import is_admin
 
 
 class MatchViewSet(MatchFootballActions, viewsets.ModelViewSet):
@@ -19,12 +21,18 @@ class MatchViewSet(MatchFootballActions, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Match.objects.filter(
-            Q(team__memberships__user=self.request.user) |
-            Q(sides__team__memberships__user=self.request.user) |
-            Q(competition_fixture__competition__owner=self.request.user) |
-            Q(competition_fixture__competition__administrators__user=self.request.user)
-        ).select_related('team').distinct().order_by('starts_at')
+        return (
+            Match.objects
+            .filter(
+                Q(team__memberships__user=self.request.user)
+                | Q(sides__team__memberships__user=self.request.user)
+                | Q(competition_fixture__competition__owner=self.request.user)
+                | Q(competition_fixture__competition__administrators__user=self.request.user)
+            )
+            .select_related('team')
+            .distinct()
+            .order_by('starts_at')
+        )
 
     def perform_create(self, serializer):
         team = get_object_or_404(Team, pk=self.request.data.get('team'))
@@ -56,7 +64,8 @@ class MatchViewSet(MatchFootballActions, viewsets.ModelViewSet):
         data = AttendanceSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         record, _ = MatchAttendance.objects.update_or_create(
-            match=match, user=request.user,
+            match=match,
+            user=request.user,
             defaults={'response': data.validated_data['response']},
         )
         return Response(AttendanceSerializer(record).data, status=status.HTTP_200_OK)

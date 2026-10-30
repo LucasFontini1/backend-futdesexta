@@ -1,11 +1,13 @@
 """Verificação de e-mail e recuperação de senha com tokens temporários."""
-from django.conf import settings
+
 from uuid import uuid4
-from django.db import transaction
+
+from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.mail import send_mail
+from django.db import transaction
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import serializers, status
@@ -13,6 +15,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
+
 from core.models import User
 
 
@@ -51,11 +54,13 @@ class PasswordResetRequestView(APIView):
             if user:
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
                 token = default_token_generator.make_token(user)
-                url = f"{settings.FRONTEND_URLS[0].rstrip('/')}/redefinir-senha?uid={uid}&token={token}"
+                url = f'{settings.FRONTEND_URLS[0].rstrip("/")}/redefinir-senha?uid={uid}&token={token}'
                 send_mail(
                     'Redefinir senha — Fut de Sexta',
                     f'Se você solicitou a recuperação, acesse: {url}',
-                    settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
                 )
         # Mesma resposta para e-mail inexistente: evita enumeração de contas.
         return Response({'detail': 'Se existir uma conta com este e-mail, enviaremos instruções.'})
@@ -104,6 +109,7 @@ class ChangePasswordView(APIView):
 
 class DeleteAccountView(APIView):
     """Desativa e anonimiza a conta preservando integridade dos placares."""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -116,7 +122,8 @@ class DeleteAccountView(APIView):
                 status=400,
             )
         with transaction.atomic():
-            from core.models import Player, TeamMembership, Notification, PushSubscription
+            from core.models import Notification, Player, PushSubscription, TeamMembership
+
             Player.objects.filter(linked_user=user).update(linked_user=None)
             TeamMembership.objects.filter(user=user).delete()
             Notification.objects.filter(user=user).delete()
@@ -127,7 +134,14 @@ class DeleteAccountView(APIView):
             user.photo = None
             user.is_active = False
             user.set_unusable_password()
-            user.save(update_fields=[
-                'email', 'name', 'username', 'photo', 'is_active', 'password',
-            ])
+            user.save(
+                update_fields=[
+                    'email',
+                    'name',
+                    'username',
+                    'photo',
+                    'is_active',
+                    'password',
+                ]
+            )
         return Response({'deleted': True})

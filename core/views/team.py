@@ -1,4 +1,5 @@
 """Controle de acesso por objeto para equipes, jogadores e convites."""
+
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
@@ -9,19 +10,21 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
 from core.models import Player, Team, TeamInvitation, TeamMembership, User
+from core.serializers import (
+    PlayerSerializer,
+    TeamDiscoverySerializer,
+    TeamInvitationSerializer,
+    TeamMembershipSerializer,
+    TeamSerializer,
+)
 from core.services.notifications import notify_user
 from core.views.team_management import TeamManagementActions
-from core.serializers import (
-    PlayerSerializer, TeamDiscoverySerializer, TeamInvitationSerializer,
-    TeamMembershipSerializer, TeamSerializer,
-)
 
 
 def is_admin(team, user):
-    return TeamMembership.objects.filter(
-        team=team, user=user, role__in=['owner', 'admin']
-    ).exists()
+    return TeamMembership.objects.filter(team=team, user=user, role__in=['owner', 'admin']).exists()
 
 
 class TeamViewSet(TeamManagementActions, viewsets.ModelViewSet):
@@ -31,16 +34,18 @@ class TeamViewSet(TeamManagementActions, viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Não retornar dados privados de equipes de terceiros.
-        return Team.objects.filter(
-            memberships__user=self.request.user
-        ).annotate(member_count=Count('memberships', distinct=True)).distinct().order_by('id')
+        return (
+            Team.objects
+            .filter(memberships__user=self.request.user)
+            .annotate(member_count=Count('memberships', distinct=True))
+            .distinct()
+            .order_by('id')
+        )
 
     def perform_create(self, serializer):
         with transaction.atomic():
             team = serializer.save(owner=self.request.user)
-            TeamMembership.objects.create(
-                team=team, user=self.request.user, role=TeamMembership.Role.OWNER
-            )
+            TeamMembership.objects.create(team=team, user=self.request.user, role=TeamMembership.Role.OWNER)
 
     def check_management(self, team):
         if not is_admin(team, self.request.user):
@@ -99,17 +104,23 @@ class TeamViewSet(TeamManagementActions, viewsets.ModelViewSet):
         if TeamMembership.objects.filter(team=team, user=invitee).exists():
             raise ValidationError({'user_id': 'Usuário já participa da equipe.'})
         if TeamInvitation.objects.filter(
-            team=team, invitee=invitee, status=TeamInvitation.Status.PENDING,
+            team=team,
+            invitee=invitee,
+            status=TeamInvitation.Status.PENDING,
         ).exists():
             raise ValidationError({'user_id': 'Já existe um convite pendente.'})
         try:
             with transaction.atomic():
-                invite = TeamInvitation.objects.create(
-                    team=team, invitee=invitee, invited_by=request.user
-                )
+                invite = TeamInvitation.objects.create(team=team, invitee=invitee, invited_by=request.user)
         except IntegrityError as exc:
             raise ValidationError({'detail': 'Já existe convite pendente.'}) from exc
-        notify_user(invitee, 'team_invitation', 'Você recebeu um convite de equipe.', f'/convites', key=f'team-invite:{invite.pk}')
+        notify_user(
+            invitee,
+            'team_invitation',
+            'Você recebeu um convite de equipe.',
+            f'/convites',
+            key=f'team-invite:{invite.pk}',
+        )
         return Response(TeamInvitationSerializer(invite).data, status=status.HTTP_201_CREATED)
 
 
@@ -118,18 +129,21 @@ class TeamInvitationViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return TeamInvitation.objects.filter(
-            Q(invitee=self.request.user)
-            | Q(team__memberships__user=self.request.user,
-                team__memberships__role__in=['owner', 'admin'])
-        ).distinct().select_related('team').order_by('-created_at')
+        return (
+            TeamInvitation.objects
+            .filter(
+                Q(invitee=self.request.user)
+                | Q(team__memberships__user=self.request.user, team__memberships__role__in=['owner', 'admin'])
+            )
+            .distinct()
+            .select_related('team')
+            .order_by('-created_at')
+        )
 
     @action(detail=True, methods=['post'], url_path='aceitar')
     def accept(self, request, pk=None):
         with transaction.atomic():
-            invite = get_object_or_404(
-                TeamInvitation.objects.select_for_update(), pk=pk, invitee=request.user
-            )
+            invite = get_object_or_404(TeamInvitation.objects.select_for_update(), pk=pk, invitee=request.user)
             if invite.status != TeamInvitation.Status.PENDING:
                 raise ValidationError({'detail': 'Convite não está pendente.'})
             if invite.expires_at <= timezone.now():
@@ -138,7 +152,8 @@ class TeamInvitationViewSet(viewsets.ReadOnlyModelViewSet):
                 expired = True
             else:
                 TeamMembership.objects.get_or_create(
-                    team=invite.team, user=request.user,
+                    team=invite.team,
+                    user=request.user,
                     defaults={'role': TeamMembership.Role.MEMBER},
                 )
                 invite.status = TeamInvitation.Status.ACCEPTED
@@ -151,9 +166,7 @@ class TeamInvitationViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['post'], url_path='recusar')
     def decline(self, request, pk=None):
         with transaction.atomic():
-            invite = get_object_or_404(
-                TeamInvitation.objects.select_for_update(), pk=pk, invitee=request.user
-            )
+            invite = get_object_or_404(TeamInvitation.objects.select_for_update(), pk=pk, invitee=request.user)
             if invite.status != TeamInvitation.Status.PENDING:
                 raise ValidationError({'detail': 'Convite não está pendente.'})
             invite.status = TeamInvitation.Status.DECLINED

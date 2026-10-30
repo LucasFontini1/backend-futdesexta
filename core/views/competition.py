@@ -1,4 +1,5 @@
 """Administração independente de competições e acesso por equipe."""
+
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -8,22 +9,31 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
 from core.models import (
-    Competition, CompetitionAdmin, CompetitionBye, CompetitionFixture, CompetitionInvitation,
-    CompetitionTeam, Match, MatchResult, MatchSide, Team,
+    Competition,
+    CompetitionAdmin,
+    CompetitionBye,
+    CompetitionFixture,
+    CompetitionInvitation,
+    CompetitionTeam,
+    Match,
+    MatchResult,
+    MatchSide,
+    Team,
 )
 from core.serializers.competition import (
-    CompetitionFixtureSerializer, CompetitionInvitationSerializer, CompetitionSerializer,
+    CompetitionFixtureSerializer,
+    CompetitionInvitationSerializer,
+    CompetitionSerializer,
 )
-from core.views.team import is_admin
 from core.services.bracket import create_knockout_round
 from core.services.notifications import notify_team, notify_user
+from core.views.team import is_admin
 
 
 def is_comp_admin(comp, user):
-    return comp.owner_id == user.pk or CompetitionAdmin.objects.filter(
-        competition=comp, user=user
-    ).exists()
+    return comp.owner_id == user.pk or CompetitionAdmin.objects.filter(competition=comp, user=user).exists()
 
 
 class CompetitionViewSet(viewsets.ModelViewSet):
@@ -31,11 +41,16 @@ class CompetitionViewSet(viewsets.ModelViewSet):
     serializer_class = CompetitionSerializer
 
     def get_queryset(self):
-        return Competition.objects.filter(
-            Q(owner=self.request.user) |
-            Q(administrators__user=self.request.user) |
-            Q(participants__team__memberships__user=self.request.user)
-        ).distinct().order_by('-created_at')
+        return (
+            Competition.objects
+            .filter(
+                Q(owner=self.request.user)
+                | Q(administrators__user=self.request.user)
+                | Q(participants__team__memberships__user=self.request.user)
+            )
+            .distinct()
+            .order_by('-created_at')
+        )
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
@@ -59,15 +74,19 @@ class CompetitionViewSet(viewsets.ModelViewSet):
         team = get_object_or_404(Team, pk=request.data.get('team'))
         if CompetitionTeam.objects.filter(competition=comp, team=team).exists():
             raise ValidationError('Equipe já participa.')
-        invite, created = CompetitionInvitation.objects.get_or_create(
-            competition=comp, team=team
-        )
+        invite, created = CompetitionInvitation.objects.get_or_create(competition=comp, team=team)
         if not created and invite.status == CompetitionInvitation.Status.PENDING:
             raise ValidationError('Convite já enviado.')
         if not created:
             invite.status = CompetitionInvitation.Status.PENDING
             invite.save(update_fields=['status'])
-        notify_team(team, 'competition_invitation', 'Sua equipe recebeu um convite de competição.', '/competicoes', key=f'competition:{invite.pk}')
+        notify_team(
+            team,
+            'competition_invitation',
+            'Sua equipe recebeu um convite de competição.',
+            '/competicoes',
+            key=f'competition:{invite.pk}',
+        )
         return Response(CompetitionInvitationSerializer(invite).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['get'], url_path='equipes')
@@ -84,7 +103,11 @@ class CompetitionViewSet(viewsets.ModelViewSet):
             raise PermissionDenied('Somente organizadores criam confrontos.')
         home = get_object_or_404(Team, pk=request.data.get('home_team'))
         away = get_object_or_404(Team, pk=request.data.get('away_team'))
-        if home.pk == away.pk or not CompetitionTeam.objects.filter(competition=comp, team=home).exists() or not CompetitionTeam.objects.filter(competition=comp, team=away).exists():
+        if (
+            home.pk == away.pk
+            or not CompetitionTeam.objects.filter(competition=comp, team=home).exists()
+            or not CompetitionTeam.objects.filter(competition=comp, team=away).exists()
+        ):
             raise ValidationError('As duas equipes precisam participar da competição.')
         try:
             start = serializers.DateTimeField().run_validation(request.data.get('starts_at'))
@@ -95,14 +118,21 @@ class CompetitionViewSet(viewsets.ModelViewSet):
             raise ValidationError('O fim precisa ser após o início.')
         with transaction.atomic():
             match = Match.objects.create(
-                team=home, kind=Match.Kind.COMPETITION, title=comp.name,
-                starts_at=start, ends_at=end, location=request.data.get('location', ''),
+                team=home,
+                kind=Match.Kind.COMPETITION,
+                title=comp.name,
+                starts_at=start,
+                ends_at=end,
+                location=request.data.get('location', ''),
             )
             MatchSide.objects.create(match=match, team=home, order=1, name=home.name)
             MatchSide.objects.create(match=match, team=away, order=2, name=away.name)
             fixture = CompetitionFixture.objects.create(
-                competition=comp, match=match, home_team=home,
-                away_team=away, round=int(request.data.get('round', 1)),
+                competition=comp,
+                match=match,
+                home_team=home,
+                away_team=away,
+                round=int(request.data.get('round', 1)),
             )
         return Response(CompetitionFixtureSerializer(fixture).data, status=status.HTTP_201_CREATED)
 
@@ -111,16 +141,21 @@ class CompetitionViewSet(viewsets.ModelViewSet):
         comp = self.get_object()
         rows = {
             item.team_id: {
-                'team': item.team_id, 'name': item.team.name, 'points': 0,
-                'played': 0, 'wins': 0, 'draws': 0, 'losses': 0,
-                'goals_for': 0, 'goals_against': 0, 'goal_difference': 0,
+                'team': item.team_id,
+                'name': item.team.name,
+                'points': 0,
+                'played': 0,
+                'wins': 0,
+                'draws': 0,
+                'losses': 0,
+                'goals_for': 0,
+                'goals_against': 0,
+                'goal_difference': 0,
             }
             for item in comp.participants.select_related('team')
         }
         for fixture in comp.fixtures.select_related('match'):
-            result = MatchResult.objects.filter(
-                match=fixture.match, match__status=Match.Status.FINISHED
-            ).first()
+            result = MatchResult.objects.filter(match=fixture.match, match__status=Match.Status.FINISHED).first()
             if not result:
                 continue
             for team_id, scored, conceded in [
@@ -140,8 +175,12 @@ class CompetitionViewSet(viewsets.ModelViewSet):
                     row['points'] += 1
                 else:
                     row['losses'] += 1
-        return Response(sorted(rows.values(), key=lambda r: (-r['points'], -r['wins'], -r['goal_difference'], -r['goals_for'], r['name'])))
-
+        return Response(
+            sorted(
+                rows.values(),
+                key=lambda r: (-r['points'], -r['wins'], -r['goal_difference'], -r['goals_for'], r['name']),
+            )
+        )
 
     @action(detail=True, methods=['post'], url_path='gerar-chave')
     def create_bracket(self, request, pk=None):
@@ -152,9 +191,7 @@ class CompetitionViewSet(viewsets.ModelViewSet):
             raise ValidationError('Apenas torneios mata-mata usam chaveamento.')
         if competition.fixtures.exists() or competition.byes.exists():
             raise ValidationError('Chaveamento já iniciado.')
-        teams = list(Team.objects.filter(
-            competition_participations__competition=competition
-        ).order_by('name', 'id'))
+        teams = list(Team.objects.filter(competition_participations__competition=competition).order_by('name', 'id'))
         if len(teams) < 2:
             raise ValidationError('São necessárias pelo menos duas equipes aceitas.')
         try:
@@ -196,11 +233,11 @@ class CompetitionViewSet(viewsets.ModelViewSet):
             raise ValidationError('Gere os confrontos iniciais primeiro.')
         current_round = last.round
         qualifiers = []
-        fixtures = list(competition.fixtures.filter(round=current_round).select_related('match', 'home_team', 'away_team'))
+        fixtures = list(
+            competition.fixtures.filter(round=current_round).select_related('match', 'home_team', 'away_team')
+        )
         for fixture in fixtures:
-            result = MatchResult.objects.filter(
-                match=fixture.match, match__status=Match.Status.FINISHED
-            ).first()
+            result = MatchResult.objects.filter(match=fixture.match, match__status=Match.Status.FINISHED).first()
             if not result:
                 raise ValidationError('Todos os jogos da rodada precisam estar finalizados.')
             if fixture.winner_id:
@@ -211,9 +248,12 @@ class CompetitionViewSet(viewsets.ModelViewSet):
                 qualifiers.append(fixture.away_team)
             else:
                 raise ValidationError('Empate precisa de vencedor por desempate.')
-        qualifiers.extend(bye.team for bye in CompetitionBye.objects.filter(
-            competition=competition, round=current_round
-        ).select_related('team'))
+        qualifiers.extend(
+            bye.team
+            for bye in CompetitionBye.objects.filter(competition=competition, round=current_round).select_related(
+                'team'
+            )
+        )
         if len(qualifiers) == 1:
             return Response({'champion': qualifiers[0].pk, 'completed': True})
         if len(qualifiers) < 2:
@@ -223,9 +263,7 @@ class CompetitionViewSet(viewsets.ModelViewSet):
             end = serializers.DateTimeField().run_validation(request.data.get('ends_at'))
         except Exception as exc:
             raise ValidationError('Informe o início e o fim da próxima rodada.') from exc
-        return Response(create_knockout_round(
-            competition, qualifiers, current_round + 1, start, end
-        ))
+        return Response(create_knockout_round(competition, qualifiers, current_round + 1, start, end))
 
 
 class CompetitionInvitationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -233,11 +271,16 @@ class CompetitionInvitationViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CompetitionInvitationSerializer
 
     def get_queryset(self):
-        return CompetitionInvitation.objects.filter(
-            Q(competition__owner=self.request.user) |
-            Q(competition__administrators__user=self.request.user) |
-            Q(team__memberships__user=self.request.user)
-        ).distinct().order_by('-sent_at')
+        return (
+            CompetitionInvitation.objects
+            .filter(
+                Q(competition__owner=self.request.user)
+                | Q(competition__administrators__user=self.request.user)
+                | Q(team__memberships__user=self.request.user)
+            )
+            .distinct()
+            .order_by('-sent_at')
+        )
 
     @action(detail=True, methods=['post'], url_path='responder')
     def respond(self, request, pk=None):
@@ -251,14 +294,15 @@ class CompetitionInvitationViewSet(viewsets.ReadOnlyModelViewSet):
             invite = CompetitionInvitation.objects.select_for_update().get(pk=invite.pk)
             if invite.status != CompetitionInvitation.Status.PENDING:
                 raise ValidationError('Convite já respondido.')
-            invite.status = (
-                CompetitionInvitation.Status.ACCEPTED if choice
-                else CompetitionInvitation.Status.DECLINED
-            )
+            invite.status = CompetitionInvitation.Status.ACCEPTED if choice else CompetitionInvitation.Status.DECLINED
             invite.save(update_fields=['status'])
             if choice:
-                CompetitionTeam.objects.get_or_create(
-                    competition=invite.competition, team=invite.team
-                )
-        notify_user(invite.competition.owner, 'competition_response', 'Convite de competição respondido.', '/competicoes', key=f'competition-answer:{invite.pk}')
+                CompetitionTeam.objects.get_or_create(competition=invite.competition, team=invite.team)
+        notify_user(
+            invite.competition.owner,
+            'competition_response',
+            'Convite de competição respondido.',
+            '/competicoes',
+            key=f'competition-answer:{invite.pk}',
+        )
         return Response(self.get_serializer(invite).data)
