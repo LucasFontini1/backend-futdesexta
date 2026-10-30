@@ -1,4 +1,5 @@
 """Autenticação JWT com mensagens localizadas, seguindo o contrato do Momentum."""
+
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework_simplejwt.serializers import (
