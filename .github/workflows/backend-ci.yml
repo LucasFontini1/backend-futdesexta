@@ -1,7 +1,7 @@
 name: Backend CI
 on:
   push:
-    branches: [main, 'feature/**']
+    branches: [main, dev, 'feature/**']
   workflow_dispatch:
 jobs:
   quality-and-tests:
