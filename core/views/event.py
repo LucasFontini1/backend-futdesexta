@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from core.models import EventAttendance, Team, TeamEvent
 from core.serializers.event import EventAttendanceSerializer, TeamEventSerializer
 from core.views.team import is_admin
+from core.services.notifications import notify_team
 
 
 class TeamEventViewSet(viewsets.ModelViewSet):
@@ -23,7 +24,8 @@ class TeamEventViewSet(viewsets.ModelViewSet):
         team = get_object_or_404(Team, pk=self.request.data.get('team'))
         if not is_admin(team, self.request.user):
             raise PermissionDenied('Somente administradores criam eventos.')
-        serializer.save(organizer=self.request.user, team=team)
+        event = serializer.save(organizer=self.request.user, team=team)
+        notify_team(team, 'event', 'Novo evento da equipe.', '/eventos', key=f'event:{event.pk}')
 
     def perform_update(self, serializer):
         if not is_admin(serializer.instance.team, self.request.user):
