@@ -75,6 +75,7 @@ class MatchResultSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Gols individuais não podem exceder o placar.')
         return data
 
+
 class MatchMetricSerializer(serializers.ModelSerializer):
     """Métricas individuais ausentes permanecem NULL (desconhecidas)."""
 
