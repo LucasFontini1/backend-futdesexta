@@ -1,8 +1,11 @@
 """Testes de autorização e fluxo de equipes privadas."""
+
 from datetime import timedelta
+
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
+
 from core.models import Team, TeamInvitation, TeamMembership, User
 
 
@@ -18,9 +21,7 @@ class PrivateTeamsTest(TestCase):
         created = self.client.post('/api/equipes/', {'name': 'Sexta FC'}, format='json')
         self.assertEqual(created.status_code, 201)
         team_id = created.data['id']
-        self.assertTrue(TeamMembership.objects.filter(
-            team_id=team_id, user=self.owner, role='owner'
-        ).exists())
+        self.assertTrue(TeamMembership.objects.filter(team_id=team_id, user=self.owner, role='owner').exists())
         self.client.force_authenticate(self.outsider)
         self.assertEqual(self.client.get(f'/api/equipes/{team_id}/').status_code, 404)
         self.assertEqual(self.client.get(f'/api/equipes/{team_id}/membros/').status_code, 404)
@@ -37,27 +38,17 @@ class PrivateTeamsTest(TestCase):
         denied = self.client.post(f'/api/equipes/{team.pk}/convidar/', {'user_id': self.outsider.pk})
         self.assertEqual(denied.status_code, 403)
         self.client.force_authenticate(self.owner)
-        response = self.client.post(
-            f'/api/equipes/{team.pk}/convidar/', {'user_id': self.outsider.pk}, format='json'
-        )
+        response = self.client.post(f'/api/equipes/{team.pk}/convidar/', {'user_id': self.outsider.pk}, format='json')
         self.assertEqual(response.status_code, 201)
         invitation_id = response.data['id']
-        duplicate = self.client.post(
-            f'/api/equipes/{team.pk}/convidar/', {'user_id': self.outsider.pk}, format='json'
-        )
+        duplicate = self.client.post(f'/api/equipes/{team.pk}/convidar/', {'user_id': self.outsider.pk}, format='json')
         self.assertEqual(duplicate.status_code, 400)
         self.client.force_authenticate(self.member)
-        self.assertEqual(
-            self.client.post(f'/api/convites-equipe/{invitation_id}/aceitar/').status_code, 404
-        )
+        self.assertEqual(self.client.post(f'/api/convites-equipe/{invitation_id}/aceitar/').status_code, 404)
         self.client.force_authenticate(self.outsider)
-        self.assertEqual(
-            self.client.post(f'/api/convites-equipe/{invitation_id}/aceitar/').status_code, 200
-        )
+        self.assertEqual(self.client.post(f'/api/convites-equipe/{invitation_id}/aceitar/').status_code, 200)
         self.assertTrue(TeamMembership.objects.filter(team=team, user=self.outsider).exists())
-        self.assertEqual(
-            self.client.post(f'/api/convites-equipe/{invitation_id}/aceitar/').status_code, 400
-        )
+        self.assertEqual(self.client.post(f'/api/convites-equipe/{invitation_id}/aceitar/').status_code, 400)
 
     def test_member_cannot_edit_team_or_create_player(self):
         team = Team.objects.create(name='Sexta', owner=self.owner)
@@ -92,7 +83,9 @@ class PrivateTeamsTest(TestCase):
         team = Team.objects.create(name='Sexta', owner=self.owner)
         TeamMembership.objects.create(team=team, user=self.owner, role='owner')
         invite = TeamInvitation.objects.create(
-            team=team, invited_by=self.owner, invitee=self.outsider,
+            team=team,
+            invited_by=self.owner,
+            invitee=self.outsider,
             expires_at=timezone.now() - timedelta(days=1),
         )
         self.client.force_authenticate(self.outsider)

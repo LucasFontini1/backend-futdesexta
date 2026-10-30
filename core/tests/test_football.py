@@ -1,10 +1,21 @@
 """Suíte funcional de escalações, resultados e rankings."""
+
 from datetime import timedelta
+
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
+
 from core.models import (
-    GoalEvent, Match, MatchResult, MatchSide, Player, ResultRevision, Team, TeamMembership, User,
+    GoalEvent,
+    Match,
+    MatchResult,
+    MatchSide,
+    Player,
+    ResultRevision,
+    Team,
+    TeamMembership,
+    User,
 )
 
 
@@ -20,8 +31,10 @@ class FootballResultTest(TestCase):
         self.player2 = Player.objects.create(team=self.team, name='Maria', shirt_number=1)
         start = timezone.now() + timedelta(days=1)
         self.match = Match.objects.create(
-            team=self.team, title='Pelada de sexta',
-            starts_at=start, ends_at=start + timedelta(hours=1),
+            team=self.team,
+            title='Pelada de sexta',
+            starts_at=start,
+            ends_at=start + timedelta(hours=1),
         )
         self.client = APIClient()
         self.client.force_authenticate(self.owner)
@@ -42,16 +55,19 @@ class FootballResultTest(TestCase):
             {'side': self.home.pk, 'player': self.player1.pk, 'position': 'Atacante'},
             {'side': self.away.pk, 'player': self.player2.pk, 'goalkeeper': True},
         ]
-        self.assertEqual(
-            self.client.put(self.url + 'escalacao/', {'slots': slots}, format='json').status_code, 200
-        )
+        self.assertEqual(self.client.put(self.url + 'escalacao/', {'slots': slots}, format='json').status_code, 200)
         data = {
-            'home_side': self.home.pk, 'away_side': self.away.pk,
-            'home_score': 2, 'away_score': 0,
-            'goals': [{
-                'scoring_side': self.home.pk, 'scorer': self.player1.pk,
-                'conceded_by': self.player2.pk,
-            }],
+            'home_side': self.home.pk,
+            'away_side': self.away.pk,
+            'home_score': 2,
+            'away_score': 0,
+            'goals': [
+                {
+                    'scoring_side': self.home.pk,
+                    'scorer': self.player1.pk,
+                    'conceded_by': self.player2.pk,
+                }
+            ],
         }
         self.assertEqual(self.client.post(self.url + 'resultado/', data, format='json').status_code, 200)
         self.assertEqual(self.client.post(self.url + 'resultado/', data, format='json').status_code, 200)

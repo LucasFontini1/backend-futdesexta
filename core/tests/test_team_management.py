@@ -1,6 +1,8 @@
 """Permissões de propriedade e vínculo de jogadores pré-cadastrados."""
+
 from django.test import TestCase
 from rest_framework.test import APIClient
+
 from core.models import Player, Team, TeamMembership, User
 
 
@@ -28,19 +30,19 @@ class TeamManagementTest(TestCase):
         self.client.force_authenticate(self.member)
         response = self.client.post(
             f'/api/equipes/{self.team.pk}/solicitar-vinculo/',
-            {'player_id': self.player.pk}, format='json',
+            {'player_id': self.player.pk},
+            format='json',
         )
         self.assertEqual(response.status_code, 201)
         self.player.refresh_from_db()
         self.assertIsNone(self.player.linked_user_id)
         self.client.force_authenticate(self.guest)
-        self.assertEqual(self.client.get(
-            f'/api/equipes/{self.team.pk}/vinculos-pendentes/'
-        ).status_code, 404)
+        self.assertEqual(self.client.get(f'/api/equipes/{self.team.pk}/vinculos-pendentes/').status_code, 404)
         self.client.force_authenticate(self.owner)
         approved = self.client.post(
             f'/api/equipes/{self.team.pk}/vinculos-pendentes/',
-            {'request_id': response.data['id'], 'approve': True}, format='json',
+            {'request_id': response.data['id'], 'approve': True},
+            format='json',
         )
         self.assertEqual(approved.status_code, 200)
         self.player.refresh_from_db()

@@ -1,8 +1,11 @@
 """Testa peladas e presença, incluindo autorização por equipe."""
+
 from datetime import timedelta
+
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework.test import APIClient
+
 from core.models import Match, MatchAttendance, Team, TeamMembership, User
 
 
@@ -19,8 +22,10 @@ class MatchSecurityTest(TestCase):
         self.start = timezone.now() + timedelta(days=2)
         self.end = self.start + timedelta(hours=2)
         self.payload = {
-            'team': self.team.pk, 'title': 'Sexta à noite',
-            'starts_at': self.start.isoformat(), 'ends_at': self.end.isoformat(),
+            'team': self.team.pk,
+            'title': 'Sexta à noite',
+            'starts_at': self.start.isoformat(),
+            'ends_at': self.end.isoformat(),
         }
 
     def test_only_admin_creates_and_updates(self):
@@ -33,9 +38,7 @@ class MatchSecurityTest(TestCase):
         self.assertEqual(self.client.patch(f'/api/partidas/{match_id}/', {'title': 'Alterada'}).status_code, 403)
 
     def test_outsider_cannot_read_or_answer(self):
-        match = Match.objects.create(
-            team=self.team, title='Sexta', starts_at=self.start, ends_at=self.end
-        )
+        match = Match.objects.create(team=self.team, title='Sexta', starts_at=self.start, ends_at=self.end)
         self.client.force_authenticate(self.outsider)
         self.assertEqual(self.client.get(f'/api/partidas/{match.id}/').status_code, 404)
         self.assertEqual(
@@ -44,9 +47,7 @@ class MatchSecurityTest(TestCase):
         )
 
     def test_member_can_only_choose_going_or_not_going(self):
-        match = Match.objects.create(
-            team=self.team, title='Sexta', starts_at=self.start, ends_at=self.end
-        )
+        match = Match.objects.create(team=self.team, title='Sexta', starts_at=self.start, ends_at=self.end)
         self.client.force_authenticate(self.member)
         url = f'/api/partidas/{match.id}/presenca/'
         self.assertEqual(self.client.post(url, {'response': 'maybe'}).status_code, 400)
@@ -57,7 +58,10 @@ class MatchSecurityTest(TestCase):
 
     def test_cannot_answer_canceled_or_started_matches(self):
         match = Match.objects.create(
-            team=self.team, title='Cancelada', starts_at=self.start, ends_at=self.end,
+            team=self.team,
+            title='Cancelada',
+            starts_at=self.start,
+            ends_at=self.end,
             status=Match.Status.CANCELED,
         )
         self.client.force_authenticate(self.member)
