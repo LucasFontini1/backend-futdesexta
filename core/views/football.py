@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 
-from core.models import GoalEvent, LineupSlot, Match, MatchResult, ResultRevision
+from core.models import GoalEvent, LineupSlot, Match, MatchMetric, MatchResult, ResultRevision
 from core.serializers.football import (
     LineupSlotSerializer,
     MatchMetricSerializer,
