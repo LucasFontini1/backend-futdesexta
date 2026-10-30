@@ -10,6 +10,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from core.models import Player, Team, TeamInvitation, TeamMembership, User
+from core.services.notifications import notify_user
 from core.serializers import (
     PlayerSerializer, TeamDiscoverySerializer, TeamInvitationSerializer,
     TeamMembershipSerializer, TeamSerializer,
@@ -107,6 +108,7 @@ class TeamViewSet(viewsets.ModelViewSet):
                 )
         except IntegrityError as exc:
             raise ValidationError({'detail': 'Já existe convite pendente.'}) from exc
+        notify_user(invitee, 'team_invitation', 'Você recebeu um convite de equipe.', f'/convites', key=f'team-invite:{invite.pk}')
         return Response(TeamInvitationSerializer(invite).data, status=status.HTTP_201_CREATED)
 
 
