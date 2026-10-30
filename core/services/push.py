@@ -1,7 +1,10 @@
 """Entrega Web Push VAPID. Falhas não interrompem funcionalidades principais."""
+
 import json
 import os
+
 from pywebpush import WebPushException, webpush
+
 from core.models import PushSubscription
 
 
@@ -19,7 +22,8 @@ def send_push(user, title, link):
                     'keys': {'p256dh': subscription.p256dh, 'auth': subscription.auth},
                 },
                 data=json.dumps({
-                    'title': title, 'body': 'Você tem uma nova notificação.',
+                    'title': title,
+                    'body': 'Você tem uma nova notificação.',
                     'url': link if link.startswith('/') and not link.startswith('//') else '/notificacoes',
                 }),
                 vapid_private_key=private_key,

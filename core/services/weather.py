@@ -1,8 +1,10 @@
 """Consulta meteorológica real com cache e estados indisponíveis."""
+
 import json
 from datetime import timezone as dt_timezone
 from urllib.parse import urlencode
 from urllib.request import urlopen
+
 from django.core.cache import cache
 from django.utils import timezone
 
@@ -18,9 +20,11 @@ def get_forecast(match):
     if cached:
         return cached
     url = 'https://api.open-meteo.com/v1/forecast?' + urlencode({
-        'latitude': match.latitude, 'longitude': match.longitude,
+        'latitude': match.latitude,
+        'longitude': match.longitude,
         'hourly': 'temperature_2m,precipitation_probability,weather_code',
-        'forecast_days': 16, 'timezone': 'UTC',
+        'forecast_days': 16,
+        'timezone': 'UTC',
     })
     try:
         with urlopen(url, timeout=5) as response:
