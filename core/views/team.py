@@ -11,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from core.models import Player, Team, TeamInvitation, TeamMembership, User
 from core.services.notifications import notify_user
+from core.views.team_management import TeamManagementActions
 from core.serializers import (
     PlayerSerializer, TeamDiscoverySerializer, TeamInvitationSerializer,
     TeamMembershipSerializer, TeamSerializer,
@@ -23,7 +24,7 @@ def is_admin(team, user):
     ).exists()
 
 
-class TeamViewSet(viewsets.ModelViewSet):
+class TeamViewSet(TeamManagementActions, viewsets.ModelViewSet):
     serializer_class = TeamSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
