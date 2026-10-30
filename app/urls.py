@@ -11,7 +11,7 @@ from core.views.event import TeamEventViewSet
 from core.views.notification import NotificationViewSet
 from core.views.calendar import CalendarView
 from core.views.location import GeocodeView, MatchWeatherView
-from core.views.account_security import VerifyEmailView, PasswordResetRequestView, PasswordResetConfirmView, ChangePasswordView
+from core.views.account_security import VerifyEmailView, PasswordResetRequestView, PasswordResetConfirmView, ChangePasswordView, DeleteAccountView
 from core.views import (
     CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView,
     MatchViewSet, TeamInvitationViewSet, TeamViewSet, UserRegistrationView, UserViewSet,
@@ -45,5 +45,6 @@ urlpatterns = [
     path('api/conta/recuperar-senha/', PasswordResetRequestView.as_view(), name='recover-password'),
     path('api/conta/redefinir-senha/', PasswordResetConfirmView.as_view(), name='reset-password'),
     path('api/conta/alterar-senha/', ChangePasswordView.as_view(), name='change-password'),
+    path('api/conta/excluir/', DeleteAccountView.as_view(), name='delete-account'),
     path('api/', include(router.urls)),
 ]
