@@ -1,2 +1,2 @@
 from .token import CustomTokenObtainPairView, CustomTokenRefreshView, CustomTokenVerifyView
-from .user import UserViewSet
+from .user import UserRegistrationView, UserViewSet

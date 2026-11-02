@@ -37,8 +37,37 @@ class LoginFlowTests(TestCase):
         }, format='json')
         self.assertEqual(response.status_code, 401)
 
-    def test_registration_is_not_part_of_login_only_scope(self):
-        self.assertEqual(self.client.post('/api/registro/', {}, format='json').status_code, 404)
+    def test_registration_creates_account_that_can_login(self):
+        response = self.client.post('/api/registro/', {
+            'email': 'novo@example.com',
+            'name': 'Novo Jogador',
+            'password': 'SenhaSegura2026!',
+        }, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertNotIn('password', response.data)
+        registered = User.objects.get(email='novo@example.com')
+        self.assertTrue(registered.check_password('SenhaSegura2026!'))
+        result = self.client.post('/api/token/', {
+            'email': 'novo@example.com',
+            'password': 'SenhaSegura2026!',
+        }, format='json')
+        self.assertEqual(result.status_code, 200)
+        self.assertIn('access', result.data)
+
+    def test_registration_rejects_duplicate_email_and_weak_password(self):
+        duplicate = self.client.post('/api/registro/', {
+            'email': self.user.email,
+            'name': 'Duplicado',
+            'password': 'SenhaSegura2026!',
+        }, format='json')
+        self.assertEqual(duplicate.status_code, 400)
+        weak = self.client.post('/api/registro/', {
+            'email': 'fraco@example.com',
+            'name': 'Teste',
+            'password': '12345678',
+        }, format='json')
+        self.assertEqual(weak.status_code, 400)
+        self.assertFalse(User.objects.filter(email='fraco@example.com').exists())
 
     def test_profile_requires_authentication(self):
         self.assertEqual(self.client.get('/api/usuarios/me/').status_code, 401)

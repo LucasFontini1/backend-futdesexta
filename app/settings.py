@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 # ============================================================
 
 load_dotenv()
+MODE = os.getenv('MODE', 'DEVELOPMENT' if os.getenv('DEBUG', 'true').lower() == 'true' else 'PRODUCTION').upper()
 
 # ============================================================
 # Caminhos do projeto
@@ -79,10 +80,10 @@ INSTALLED_APPS = [
 # ============================================================
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -174,14 +175,16 @@ FILE_UPLOAD_PERMISSIONS = 0o640
 # Durante o desenvolvimento o frontend precisa acessar
 # diretamente o servidor Django.
 
-MEDIA_URL = 'http://127.0.0.1:8000/media/'
+MEDIA_URL = '/media/'
+if MODE == 'DEVELOPMENT':
+    MEDIA_URL = f"http://{os.getenv('MY_IP', '127.0.0.1')}:8000/media/"
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # ============================================================
 # Cloudinary (opcional)
 # ============================================================
 
-if CLOUDINARY_URL:
+if CLOUDINARY_URL and MODE != 'DEVELOPMENT':
     # Em produção, os arquivos enviados ficam armazenados
     # no Cloudinary.
 
@@ -222,7 +225,7 @@ REST_FRAMEWORK = {
     ),
 
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
+        'rest_framework.permissions.IsAuthenticated',
     ),
 
     'DEFAULT_SCHEMA_CLASS':
@@ -242,7 +245,7 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Fut de Sexta API',
-    'DESCRIPTION': 'Login JWT do Fut de Sexta.',
+    'DESCRIPTION': 'Registro de usuários e autenticação JWT do Fut de Sexta.',
     'VERSION': '1.0.0',
 }
 
@@ -254,5 +257,6 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=3),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'AUTH_HEADER_TYPES': ('Bearer',),
+    'TOKEN_OBTAIN_SERIALIZER': 'core.views.token.LoginSerializer',
 }
 
