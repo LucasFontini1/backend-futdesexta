@@ -23,10 +23,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Configurações básicas
 # ============================================================
 
+DEBUG = os.getenv('DEBUG', 'true').lower() == 'true'
 SECRET_KEY = os.getenv('SECRET_KEY') or (get_random_secret_key() if DEBUG else None)
 if not SECRET_KEY:
     raise ImproperlyConfigured('Configure SECRET_KEY no ambiente de produção.')
-DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host.strip()]
 SECURE_SSL_REDIRECT = not DEBUG and os.getenv('SECURE_SSL_REDIRECT', 'true').lower() == 'true'
 SESSION_COOKIE_SECURE = not DEBUG
