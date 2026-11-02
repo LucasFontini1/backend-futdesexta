@@ -1,6 +1,8 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
+from django.core.management.utils import get_random_secret_key
 
 import dj_database_url
 from dotenv import load_dotenv
@@ -21,9 +23,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Configurações básicas
 # ============================================================
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure')
+SECRET_KEY = os.getenv('SECRET_KEY') or (get_random_secret_key() if DEBUG else None)
+if not SECRET_KEY:
+    raise ImproperlyConfigured('Configure SECRET_KEY no ambiente de produção.')
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host.strip()]
+SECURE_SSL_REDIRECT = not DEBUG and os.getenv('SECURE_SSL_REDIRECT', 'true').lower() == 'true'
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 # ============================================================
 # Frontend autorizado
@@ -42,7 +49,7 @@ CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')
 
 CORS_ALLOWED_ORIGINS = FRONTEND_URLS
 CSRF_TRUSTED_ORIGINS = FRONTEND_URLS
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = False
 
 # ============================================================
 # Aplicações instaladas
@@ -225,6 +232,8 @@ REST_FRAMEWORK = {
         'app.pagination.CustomPagination',
 
     'PAGE_SIZE': 10,
+    'DEFAULT_THROTTLE_CLASSES': ['rest_framework.throttling.AnonRateThrottle', 'rest_framework.throttling.UserRateThrottle'],
+    'DEFAULT_THROTTLE_RATES': {'anon': '100/hour', 'user': '1000/hour', 'login': '10/hour'},
 }
 
 # ============================================================
@@ -232,8 +241,8 @@ REST_FRAMEWORK = {
 # ============================================================
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': '<PROJETO> API',
-    'DESCRIPTION': 'API para o projeto <descreva aqui seu projeto>.',
+    'TITLE': 'Fut de Sexta API',
+    'DESCRIPTION': 'Login JWT do Fut de Sexta.',
     'VERSION': '1.0.0',
 }
 
@@ -247,38 +256,3 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# ============================================================
-# Informações de configuração (debug)
-# ============================================================
-
-print('=' * 70)
-print('CONFIGURAÇÃO DA APLICAÇÃO')
-print('=' * 70)
-
-print(f'DEBUG....................: {DEBUG if DEBUG else "NÃO DEFINIDO"}')
-print(f'SECRET_KEY...............: {SECRET_KEY if SECRET_KEY else "NÃO DEFINIDA"}')
-
-print()
-
-print(f'DATABASE ENGINE.............: {DATABASES["default"]["ENGINE"]}')
-print(f'DATABASE NAME...............: {DATABASES["default"]["NAME"]}')
-
-print()
-
-print(f'FRONTEND_URLS ({len(FRONTEND_URLS)}).......: {FRONTEND_URLS}')
-print(f'CORS_ALLOWED_ORIGINS....: {CORS_ALLOWED_ORIGINS}')
-print(f'CSRF_TRUSTED_ORIGINS....: {CSRF_TRUSTED_ORIGINS}')
-
-print()
-
-print(f'MEDIA_URL...............: {MEDIA_URL}')
-print(f'MEDIA_ROOT..............: {MEDIA_ROOT}')
-
-print()
-
-print(f'CLOUDINARY..............: {"SIM" if CLOUDINARY_URL else "NÃO"}')
-
-if CLOUDINARY_URL:
-    print(f'CLOUDINARY_URL..........: {CLOUDINARY_URL}')
-
-print('=' * 70)
