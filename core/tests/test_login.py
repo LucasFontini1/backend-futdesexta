@@ -37,6 +37,9 @@ class LoginFlowTests(TestCase):
         }, format='json')
         self.assertEqual(response.status_code, 401)
 
+    def test_registration_is_not_part_of_login_only_scope(self):
+        self.assertEqual(self.client.post('/api/registro/', {}, format='json').status_code, 404)
+
     def test_profile_requires_authentication(self):
         self.assertEqual(self.client.get('/api/usuarios/me/').status_code, 401)
 
