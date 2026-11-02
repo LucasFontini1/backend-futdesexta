@@ -10,7 +10,6 @@ from core.views import (
     CustomTokenObtainPairView,
     CustomTokenRefreshView,
     CustomTokenVerifyView,
-    UserRegistrationView,
     UserViewSet,
 )
 
@@ -36,8 +35,6 @@ urlpatterns = [
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', CustomTokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', CustomTokenVerifyView.as_view(), name='token_verify'),
-    # Registro de usuários
-    path('api/registro/', UserRegistrationView.as_view(), name='user_registration'),
     # API
     path('api/', include(router.urls)),
 ]
